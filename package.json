@@ -1,0 +1,30 @@
+{
+	"name": "@nan0web/db-fs",
+	"version": "1.0.0",
+	"description": "Database provider for nan•web with node:fs",
+	"main": "src/index.js",
+	"types": "types/index.d.ts",
+	"type": "module",
+	"scripts": {
+		"build": "tsc",
+		"test": "node --test"
+	},
+	"keywords": [
+		"nanoweb",
+		"database",
+		"fs"
+	],
+	"author": "ЯRаСлав YaRaSLove <support@yaro.page>",
+	"license": "ISC",
+	"packageManager": "pnpm@10.11.0",
+	"devDependencies": {
+		"@nan0web/db": "link:../db",
+		"@nan0web/types": "link:../types",
+		"nanoweb-fs": "^1.17.7"
+	},
+	"peerDependencies": {
+		"@nan0web/db": "^1.0.0",
+		"@nan0web/types": "^1.0.0",
+		"nanoweb-fs": "^1.17.7"
+	}
+}
