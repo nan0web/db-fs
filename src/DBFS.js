@@ -53,6 +53,14 @@ class DBFS extends DB {
 	 * @returns {Promise<string>} The resolved path relative to the DBFS root.
 	 */
 	async resolve(...args) {
+		return this.resolveSync(...args)
+	}
+	/**
+	 * Resolves a relative URI to a path within the DBFS root.
+	 * @param {...string} args The path segments to resolve.
+	 * @returns {string} The resolved path relative to the DBFS root.
+	 */
+	resolveSync(...args) {
 		const root = this.absolute()
 		const path = this.absolute(...args)
 		return this.relative(root, path)
