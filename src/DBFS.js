@@ -13,7 +13,8 @@ class DBFS extends DB {
 		/** @param {string} file @param {any} data @param {string} ext */
 		(file, data, ext) => ".txt" === ext ? loadFile(file, "") : false,
 		/** @param {string} file @param {any} data @param {string} ext */
-		(file, data, ext) => load(file),
+		(file, data, ext) => DBFS.Directory.DATA_EXTNAMES.includes(ext) ? load(file)
+			: loadFile(file, null, true),
 	]
 	/**
 	 * Array of saver functions that attempt to save data to a file path.

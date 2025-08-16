@@ -18,8 +18,8 @@
 	"license": "ISC",
 	"packageManager": "pnpm@10.11.0",
 	"devDependencies": {
-		"@nan0web/db": "link:../db",
-		"@nan0web/types": "link:../types",
+		"@nan0web/db": "workspace:*",
+		"@nan0web/types": "workspace:*",
 		"nanoweb-fs": "^1.17.7"
 	},
 	"peerDependencies": {
