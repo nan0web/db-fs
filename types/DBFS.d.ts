@@ -61,9 +61,9 @@ declare class DBFS extends DB {
      * Ensures the current operation has proper access rights.
      * @param {string} uri The URI to check access for.
      * @param {"r"|"w"|"d"} [level="r"] The access level: read, write, or delete.
-     * @returns {Promise<boolean>} True if access is granted.
+     * @returns {Promise<void>} True if access is granted.
      */
-    ensureAccess(uri: string, level?: "r" | "w" | "d" | undefined): Promise<boolean>;
+    ensureAccess(uri: string, level?: "r" | "w" | "d" | undefined): Promise<void>;
     /**
      * Lists the contents of a directory.
      * @param {string} uri The directory URI to list.

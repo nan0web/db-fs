@@ -1,7 +1,7 @@
 import { resolve, extname, relative, sep } from "node:path"
 import { appendFileSync, existsSync, mkdirSync, statSync, readdirSync, unlinkSync, rmdirSync } from "node:fs"
 import DB, { DocumentStat, DocumentEntry } from "@nan0web/db"
-import { load, loadFile, save } from "nanoweb-fs"
+import { load, save } from "./file-system/index.js"
 
 class DBFS extends DB {
 	/**
@@ -11,10 +11,9 @@ class DBFS extends DB {
 	 */
 	loaders = [
 		/** @param {string} file @param {any} data @param {string} ext */
-		(file, data, ext) => ".txt" === ext ? loadFile(file, "") : false,
+		(file, data, ext) => ".txt" === ext ? load(file, { delimiter: "" }) : false,
 		/** @param {string} file @param {any} data @param {string} ext */
-		(file, data, ext) => DBFS.Directory.DATA_EXTNAMES.includes(ext) ? load(file)
-			: loadFile(file, null, true),
+		(file, data, ext) => load(file),
 	]
 	/**
 	 * Array of saver functions that attempt to save data to a file path.
@@ -23,8 +22,6 @@ class DBFS extends DB {
 	 */
 	savers = [
 		/** @param {string} file @param {any} data @param {string} ext */
-		(file, data, ext) => ".json" === ext ? save(file, data, null, 2) : false,
-		/** @param {string} file @param {any} data @param {string} ext */
 		(file, data, ext) => save(file, data),
 	]
 	/**
@@ -32,6 +29,7 @@ class DBFS extends DB {
 	 * @param {string} uri The URI to extract from the current DB.
 	 * @returns {DBFS} A new DBFS instance with extracted data.
 	 */
+	// @ts-ignore DBFS extends DB
 	extract(uri) {
 		const db = super.extract(uri)
 		// Convert the base DB instance to DBFS
@@ -234,19 +232,18 @@ class DBFS extends DB {
 	 * Ensures the current operation has proper access rights.
 	 * @param {string} uri The URI to check access for.
 	 * @param {"r"|"w"|"d"} [level="r"] The access level: read, write, or delete.
-	 * @returns {Promise<boolean>} True if access is granted.
+	 * @returns {Promise<void>} True if access is granted.
 	 */
 	async ensureAccess(uri, level = "r") {
 		await super.ensureAccess(uri, level)
 		const path = await this.resolve(uri)
 		if (uri.endsWith("/llm.config.js")) {
 			/** @note load config file from anywhere */
-			return true
+			return
 		}
 		if (path.startsWith("..")) {
 			throw new Error("No access outside of the db container")
 		}
-		return true
 	}
 
 	/**

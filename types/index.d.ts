@@ -3,3 +3,4 @@ import DBFS from "./DBFS.js";
 import { DocumentEntry } from "@nan0web/db";
 import { DocumentStat } from "@nan0web/db";
 export { DBFS, DocumentEntry, DocumentStat };
+export { load, save, loadCSV, saveCSV, loadJSON, saveJSON, loadTXT, saveTXT } from "./file-system/index.js";

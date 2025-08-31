@@ -7,4 +7,8 @@ import DBFS from "./DBFS.js"
  */
 export { DBFS, DocumentEntry, DocumentStat }
 
+export {
+	load, save, loadCSV, saveCSV, loadJSON, saveJSON, loadTXT, saveTXT
+} from "./file-system/index.js"
+
 export default DBFS
