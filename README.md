@@ -1,150 +1,225 @@
-# NaN•Web DataBase FileSystem (DBFS)
+# @nan0web/db-fs
 
-A pure Node.js filesystem database for managing documents and directories with a familiar API. DBFS provides a simple, extensible interface for reading, writing, listing, and managing files and directories, with support for custom loaders and savers, access control, and streaming file discovery.
+<!-- %PACKAGE_STATUS% -->
 
-## Goal
-
-Make all the information as a database, following the `@nan0web/db` goals.
-
-Example:
-
-```js
-import DB from "@nan0web/db-fs"
-
-const db = new DB()
-db.attach(new DB({ root: "stats/", cwd: "/var/log/stats" }))
-db.attach(new DB({ root: "users/", cwd: "/home" }))
-db.attach(new DB({ root: "/", cwd: "/var/www" }))
-
-const adsStats = await db.loadDocument("/stats/2025/02/16/ads")
-const me = await db.loadDocument("/users/me@gmail.com")
-```
-
-## Mission
-
-NaN0 changes makes the solution.  
-Only `node:test` for testing.  
-Maximum usage of vanila.js and node.js.  
-As simple as possible.
-
-## Features
-
-- **Filesystem-backed database**: Store and manage documents as files and directories.
-- **Customizable loaders and savers**: Plug in your own serialization/deserialization logic.
-- **Access control**: Prevent access outside the database root.
-- **Streaming file discovery**: Efficiently traverse and process large directory trees.
-- **Progress reporting**: Real-time progress and statistics during file operations.
-- **Extensive test coverage**: Includes tests for all major features.
+Database provider for nan•web with node:fs.
+Allows saving, loading, writing, and scanning files with async support,
+ideal for lightweight monorepo tooling.
 
 ## Installation
 
+How to install with npm?
 ```bash
 npm install @nan0web/db-fs
 ```
 
-## Usage
+How to install with pnpm?
+```bash
+pnpm add @nan0web/db-fs
+```
 
-### Basic Example
+How to install with yarn?
+```bash
+yarn add @nan0web/db-fs
+```
 
+## Quick Start
+
+How to save and load a JSON file?
 ```js
 import DBFS from "@nan0web/db-fs"
+const db = new DBFS({ root: "__test_quick_start__" })
+await db.connect()
 
-const db = new DBFS({ root: "./data" })
+const data = { name: "Test", value: 42 }
+await db.saveDocument("test.json", data)
+const loaded = await db.loadDocument("test.json")
+console.info(loaded) // ← { name: "Test", value: 42 }
 
-async function run() {
-  await db.connect()
-
-  // Save a document
-  await db.saveDocument("example.json", { hello: "world" })
-
-  // Load a document
-  const doc = await db.loadDocument("example.json")
-  console.log(doc)
-
-  // List directory entries
-  const entries = await db.listDir(".")
-  for (const entry of entries) {
-    console.log(entry.name, entry.stat.size)
-  }
-
-  await db.disconnect()
-}
-
-run()
 ```
 
-### Streaming File Discovery
-
-Use the provided CLI tool or the `findStream` method to traverse large directory trees with progress reporting.
-
-#### CLI Usage
-
-```bash
-node ./bin/find.js [root-directory]
-```
-
-This will recursively scan the directory, reporting progress, memory usage, and file group statistics.
-
-#### Programmatic Usage
-
+How to append content to a TXT file?
 ```js
-for await (const entry of db.findStream(".", { limit: -1, sort: "name", order: "desc" })) {
-  console.log(entry.file.name, entry.file.stat.size)
-}
+import DBFS from "@nan0web/db-fs"
+const db = new DBFS({ root: "__test_append__" })
+await db.connect()
+
+await db.writeDocument("log.txt", "First line\n")
+await db.writeDocument("log.txt", "Second line")
+const content = await db.loadDocument("log.txt")
+console.info(content) // ← "First line\nSecond line"
+
 ```
+## Directory Scanning
 
-## API
+### `findStream(uri, { limit = -1, sort = "name", order = "asc", skipStat = false, skipSymbolicLink = true })`
 
-### `DBFS` Class
+Asynchronously scans directories with configurable limits and sorting.
 
-#### Constructor
+- **Parameters**
+  - `uri` (string) – Path to scan
+  - `options.limit` (number) – Max entries to return (-1 for all)
+  - `options.sort` (string) – Sort by "name", "mtime", or "size"
+  - `options.order` (string) – Sort order "asc" or "desc"
+  - `options.skipStat` (boolean) – Skip file stats for faster scan
+  - `options.skipSymbolicLink` (boolean) – Ignore symbolic links
 
+How to scan directory with findStream?
 ```js
-new DBFS({ root: string })
+import FS from "@nan0web/db-fs"
+const db = new FS()
+await db.connect()
+
+const files = []
+for await (const entry of db.findStream("src", { limit: 3, sort: "name", order: "asc" })) {
+	files.push(entry.file.name)
+}
+console.info(files) // ← ['file-system', 'DBFS.js', 'DBFS.test.js']
+
 ```
+## File Formats
 
-- `root`: The root directory for the database.
+Supports automatic handling of:
+- `.json` – Pretty-printed
+- `.jsonl` – Array of JSON lines
+- `.csv`, `.tsv` – Delimited tables
+- `.txt` – Plain text
 
-#### Methods
+How to save and load CSV file?
+```js
+import DBFS from "@nan0web/db-fs"
+const db = new DBFS({ root: "__test_csv__" })
+await db.connect()
 
-- `connect()`: Connect to the database (prepares internal state).
-- `disconnect()`: Disconnect from the database.
-- `saveDocument(uri, document)`: Save a document to a file.
-- `loadDocument(uri, defaultValue)`: Load a document from a file, or return `defaultValue` if not found.
-- `writeDocument(uri, chunk)`: Append a chunk to a document.
-- `dropDocument(uri)`: Delete a document.
-- `statDocument(uri)`: Get file stats for a document.
-- `listDir(uri, options)`: List directory entries.
-- `findStream(root, options)`: Async generator for streaming file discovery.
+const data = [
+	{ Name: "John", Age: 30 },
+	{ Name: "Jane", Age: 25 }
+]
+await db.saveDocument("people.csv", data)
+const loaded = await db.loadDocument("people.csv")
+console.info(loaded) // ← [ { Name: "John", Age: 30 }, { Name: "Jane", Age: 25 } ]
 
-#### Access Control
+```
+## Playground
 
-DBFS prevents access to files outside the configured root directory. Attempts to access files outside the root will throw an error.
+Try examples safely with CLI sandbox:
 
-#### Custom Loaders and Savers
-
-You can extend the `loaders` and `savers` arrays to support custom file formats.
-
-## Development & Testing
-
-Run the test suite using [node:test](https://nodejs.org/api/test.html):
-
+How to run CLI sandbox?
 ```bash
-npx node --test
+git clone https://github.com/nan0web/db-fs.git
+cd db-fs
+npm install
+npm run playground
 ```
 
-Or run specific test files:
+## API Reference
 
-```bash
-npx node --test ./src/index.test.js
-npx node --test ./src/findStream.test.js
+### `saveDocument(uri, data)`
+
+Saves data to a file with auto-formatting.
+
+- **Parameters**
+  - `uri` (string) – File path
+  - `data` (any) – Data to save, formatted by extension
+
+- **Returns**
+  - Promise<boolean> – Success status
+
+How to test saveDocument API?
+```js
+import DBFS from "@nan0web/db-fs"
+const db = new DBFS({ root: "__test_save_api__" })
+await db.connect()
+
+const result = await db.saveDocument("test.json", { a: 1 })
+console.info(result) // ← true
 ```
+### `loadDocument(uri, defaultValue?)`
+
+Loads file content parsed by extension.
+
+- **Parameters**
+  - `uri` (string) – File path
+  - `defaultValue` (any) – Fallback if not found
+
+- **Returns**
+  - Promise<any> – Parsed content or default
+
+How to test loadDocument API?
+```js
+import DBFS from "@nan0web/db-fs"
+const db = new DBFS({ root: "__test_load_api__" })
+await db.connect()
+
+const empty = await db.loadDocument("missing.json", {})
+console.info(empty) // ← {}
+
+await db.saveDocument("data.json", { b: 2 })
+const loaded = await db.loadDocument("data.json")
+console.info(loaded) // ← { b: 2 }
+
+```
+### `writeDocument(uri, chunk)`
+
+Appends raw string chunk to file.
+
+- **Parameters**
+  - `uri` (string) – File path
+  - `chunk` (string) – Text to append
+
+- **Returns**
+  - Promise<boolean> – Success status
+
+How to test writeDocument API?
+```js
+import DBFS from "@nan0web/db-fs"
+const db = new DBFS({ root: "__test_write_api__" })
+await db.connect()
+
+await db.writeDocument("log.txt", "start\n")
+await db.writeDocument("log.txt", "done")
+const result = await db.loadDocument("log.txt")
+console.info(result) // ← "start\ndone"
+
+```
+### `dropDocument(uri)`
+
+Deletes a file or directory.
+
+- **Parameters**
+  - `uri` (string) – Path to delete
+
+- **Returns**
+  - Promise<boolean> – Success status
+
+- **Throws**
+  - Error if access violation or non-empty directory
+
+How to test dropDocument API?
+```js
+import DBFS from "@nan0web/db-fs"
+const db = new DBFS({ root: "__test_drop_api__" })
+await db.connect()
+
+await db.saveDocument("temp.txt", "Delete me")
+const existsBefore = await db.loadDocument("temp.txt")
+console.info(existsBefore) // ← "Delete me"
+
+await db.dropDocument("temp.txt")
+const missingAfter = await db.loadDocument("temp.txt", null)
+console.info(missingAfter) // ← null
+
+```
+## Java•Script
+
+Fully typed with TypeScript declaration files and JSdoc:
+
+How many d.ts files cover it?
+
+## Contributing
+
+How to contribute? - [check CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## License
 
-ISC
-
-## Acknowledgements
-
-- [@nan0web/db](https://nan0web.yaro.page/db.html)
-- [nanoweb-fs](https://nanoweb.yaro.page/nanoweb-fs.html)
+How to license? – see [LICENSE](./LICENSE)

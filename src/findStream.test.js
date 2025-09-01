@@ -341,11 +341,11 @@ suite("findStream()", () => {
 			results.push(entry)
 		}
 
-		// Check that we have 3 non-directory entries (the actual files)
+		// Check that we have 2 non-directory entries (from one level deep)
 		const fileResults = results.filter(r => !r.file.stat.isDirectory)
 		assert.strictEqual(fileResults.length, 2)
-		assert.ok(fileResults.some(r => r.file.name === "dir/file.txt"))
 		assert.ok(fileResults.some(r => r.file.name === "dir/nested/deep.txt"))
+		assert.ok(fileResults.some(r => r.file.name === "dir/file.txt"))
 
 		// Check that we have 2 directory entries
 		const dirResults = results.filter(r => r.file.stat.isDirectory)
@@ -386,7 +386,7 @@ suite("findStream()", () => {
 			results.push(entry)
 		}
 
-		// Get only the file entries for size comparison
+		// Get only the file entries for size comparison (excluding the directory itself)
 		const fileResults = results.filter(r => !r.file.stat.isDirectory).map(r => r.file)
 		const expectedFileOrder = ["data.json", "script.js", "style.css", "index.html", "dir/image.png"]
 		assert.deepStrictEqual(fileResults.map(f => f.name), expectedFileOrder)

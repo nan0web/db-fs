@@ -1,5 +1,6 @@
 __test_fs__/
 chat/
-coverage/
+/.datasets/
+/.coverage/
 node_modules/
 me.md
