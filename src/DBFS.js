@@ -1,7 +1,7 @@
 import { resolve, extname, relative, sep } from "node:path"
 import { appendFileSync, existsSync, mkdirSync, statSync, readdirSync, unlinkSync, rmdirSync } from "node:fs"
 import DB, { DocumentStat, DocumentEntry } from "@nan0web/db"
-import { load, save } from "./file-system/index.js"
+import { load, loadTXT, save } from "./file-system/index.js"
 
 class DBFS extends DB {
 	/**
@@ -11,7 +11,7 @@ class DBFS extends DB {
 	 */
 	loaders = [
 		/** @param {string} file @param {any} data @param {string} ext */
-		(file, data, ext) => ".txt" === ext ? load(file, { delimiter: "" }) : false,
+		(file, data, ext) => ".txt" === ext ? loadTXT(file, "", true) : false,
 		/** @param {string} file @param {any} data @param {string} ext */
 		(file, data, ext) => load(file),
 	]
