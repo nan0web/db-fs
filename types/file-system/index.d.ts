@@ -30,4 +30,6 @@ import { saveJSON } from "./json.js";
 import { loadJSON } from "./json.js";
 import { saveTXT } from "./txt.js";
 import { loadTXT } from "./txt.js";
-export { saveCSV, loadCSV, saveJSON, loadJSON, saveTXT, loadTXT };
+import { saveYAML } from "./yaml.js";
+import { loadYAML } from "./yaml.js";
+export { saveCSV, loadCSV, saveJSON, loadJSON, saveTXT, loadTXT, saveYAML, loadYAML };

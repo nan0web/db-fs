@@ -27,11 +27,11 @@ suite("File lifecycle tests", () => {
 		}
 	})
 
-	it("should resolve relative file within root boundary", async () => {
+	it("should resolve relative file within root boundary", () => {
 		db.cwd = mockRoot
 		db.root = path.join("private")
 
-		const resolved = await db.resolve("test.txt")
+		const resolved = db.resolveSync("test.txt")
 		assert.strictEqual(resolved, "test.txt", "Should resolve file within root without duplication")
 	})
 
@@ -68,7 +68,9 @@ suite("File lifecycle tests", () => {
 		[["private/test.txt"], "private/test.txt"],
 		[["private", "test.txt"], "private/test.txt"],
 		[["a", "b", "c.txt"], "a/b/c.txt"],
-		[["../../", "var", "www"], "../../var/www"]
+		[["../../", "var", "www"], "var/www"],
+		[["."], "."],
+		[["/", "404.json"], "404.json"]
 	]
 
 	for (const [args, exp] of expected) {
@@ -85,5 +87,10 @@ suite("File lifecycle tests", () => {
 		const resolved = await db.resolve("data/file.json")
 		const abs = db.absolute("data/file.json")
 		assert.ok(abs.endsWith("/testfs/data/file.json"))
+	})
+
+	it("testing", () => {
+		const result = db.resolveSync("/", "404.json")
+		assert.equal(result, "404.json")
 	})
 })

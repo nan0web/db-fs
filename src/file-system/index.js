@@ -3,6 +3,7 @@ import fs from "node:fs"
 import { loadJSON, saveJSON } from "./json.js"
 import { loadCSV, saveCSV } from "./csv.js"
 import { loadTXT, saveTXT } from "./txt.js"
+import { loadYAML, saveYAML } from "./yaml.js"
 
 /**
  * Loads file content based on extension.
@@ -34,11 +35,11 @@ function load(file, opts = {}) {
 		const rows = loadTXT(file, delimiter, softError)
 		return Array.from(rows).map(r => JSON.parse(r))
 	}
-	// if (['yaml', 'yml'].includes(ext)) {
-	// 	return loadYAML(file, opts.softError || false)
-	// }
+	if (['.yaml', '.yml'].includes(ext)) {
+		return loadYAML(file, softError)
+	}
 	// if (['nano'].includes(ext)) {
-	// 	return loadNANO(file, opts.softError || false)
+	// 	return loadNANO(file, softError)
 	// }
 	if ([".csv", ".tsv"].includes(format)) {
 		return loadCSV(file, delimiter, quote, softError)
@@ -59,9 +60,9 @@ function load(file, opts = {}) {
  */
 function save(file, data, ...args) {
 	const ext = extname(file)
-	// if (['yaml', 'yml'].includes(ext)) {
-	// 	return saveYAML(file, data, ...args)
-	// }
+	if (['yaml', 'yml'].includes(ext)) {
+		return saveYAML(file, data)
+	}
 	// if (['nano'].includes(ext)) {
 	// 	return saveNANO(file, data)
 	// }
@@ -82,9 +83,12 @@ function save(file, data, ...args) {
 	if (['.txt'].includes(ext)) {
 		return saveTXT(file, data, ...args)
 	}
-	const text = String(data)
-	fs.writeFileSync(file, text, { encoding: 'utf8' })
-	return text
+	if ("string" === typeof data) {
+		fs.writeFileSync(file, data, 'utf8')
+		return data
+	}
+	fs.writeFileSync(file, data)
+	return data
 }
 
 export {
@@ -92,4 +96,5 @@ export {
 	saveCSV, loadCSV,
 	saveJSON, loadJSON,
 	saveTXT, loadTXT,
+	saveYAML, loadYAML
 }

@@ -61,8 +61,14 @@ class DBFS extends DB {
 	 */
 	resolveSync(...args) {
 		const root = this.absolute()
-		const path = this.absolute(...args)
-		return this.relative(root, path)
+		let path = this.absolute(...args)
+		if (path.startsWith("/")) {
+			if (path.startsWith(root)) {
+				path = path.slice(root.length)
+			}
+		}
+		if (!path) return "."
+		return this.relative(root, path).replace(/^(\.\.\/)+/g, "")
 	}
 	/**
 	 * Returns the absolute path of the resolved path.
@@ -270,6 +276,7 @@ class DBFS extends DB {
 			return new DocumentEntry({
 				stat,
 				name: entry.name,
+				path: relative(this.cwd, resolve(this.cwd, entry.parentPath, entry.name)),
 				depth,
 			})
 		})

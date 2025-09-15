@@ -37,6 +37,13 @@ declare class DBFS extends DB {
      */
     extract(uri: string): DBFS;
     /**
+     * Returns the relative path from one path to another.
+     * @param {string} from The starting path.
+     * @param {string} to The destination path.
+     * @returns {string} The relative path from 'from' to 'to'.
+     */
+    relative(from: string, to: string): string;
+    /**
      * Returns the stat of the document, uses meta (cache) if available.
      * @throws {Error} If the document cannot be stat.
      * @param {string} uri The URI to stat the document from.

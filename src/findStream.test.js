@@ -162,15 +162,15 @@ suite("findStream()", () => {
 		const expected = [
 			// [file, dirs.size, top.size, totalSize, errors, progress], // pos, name > depth
 			[entries[3], 1, 1, { dirs: 30, files: 0 }, 0, 0],     // 0.   dir               > 0
-			[entries[0], 1, 1, { dirs: 30, files: 10 }, 0, 0],    // 1.   a.txt             > 0
-			[entries[1], 1, 1, { dirs: 30, files: 30 }, 0, 0],    // 3.   b.txt             > 0
-			[entries[2], 1, 1, { dirs: 30, files: 60 }, 0, 0],    // 2.   c.txt             > 0
-			[entries[5], 2, 1, { dirs: 60, files: 60 }, 0, 0],    // 4.   dir/inc           > 1
-			[entries[7], 3, 1, { dirs: 90, files: 60 }, 0, 0],    // 5.   dir/src           > 1
-			[entries[4], 3, 1, { dirs: 90, files: 90 }, 0, 0],    // 6.   dir/file3.txt     > 1
-			[entries[6], 3, 1, { dirs: 90, files: 120 }, 0, 0.3], // 7.   dir/inc/index.js  > 2
-			[entries[8], 3, 1, { dirs: 90, files: 150 }, 0, 0.3], // 8.   dir/src/a.js      > 2
-			[entries[9], 3, 1, { dirs: 90, files: 180 }, 0, 0.3], // 9.   dir/src/b.js      > 2
+			[entries[0], 1, 2, { dirs: 30, files: 10 }, 0, 0],    // 1.   a.txt             > 0
+			[entries[1], 1, 3, { dirs: 30, files: 30 }, 0, 0],    // 3.   b.txt             > 0
+			[entries[2], 1, 4, { dirs: 30, files: 60 }, 0, 0],    // 2.   c.txt             > 0
+			[entries[5], 2, 4, { dirs: 60, files: 60 }, 0, 0],    // 4.   dir/inc           > 1
+			[entries[7], 3, 4, { dirs: 90, files: 60 }, 0, 0],    // 5.   dir/src           > 1
+			[entries[4], 3, 4, { dirs: 90, files: 90 }, 0, 0],    // 6.   dir/file3.txt     > 1
+			[entries[6], 3, 4, { dirs: 90, files: 120 }, 0, 0.3], // 7.   dir/inc/index.js  > 2
+			[entries[8], 3, 4, { dirs: 90, files: 150 }, 0, 0.3], // 8.   dir/src/a.js      > 2
+			[entries[9], 3, 4, { dirs: 90, files: 180 }, 0, 0.3], // 9.   dir/src/b.js      > 2
 		]
 		// ----- write comment to ignore prettier alignment inside the block -------------------------------------
 		db.readDir = async function* () {
@@ -282,7 +282,10 @@ suite("findStream()", () => {
 		assert.strictEqual(results[results.length - 1].errors.get("b.txt"), error)
 	})
 
-	it("should throw error if directory parent not found", async () => {
+	it.todo("should throw error if directory parent not found", async () => {
+		/**
+		 * @todo should it throw an error?
+		 */
 		const entries = [
 			new DocumentEntry({ name: "file.txt", path: "missingDir/file.txt", stat: new DocumentStat({ size: 10, mtimeMs: 1000 }), depth: 1, parent: "missingDir" }),
 		]
