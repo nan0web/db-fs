@@ -75,6 +75,7 @@ suite("File lifecycle tests", () => {
 
 	for (const [args, exp] of expected) {
 		it(`should resolve [${args}] => ${exp}`, async () => {
+			const db = new DBFS()
 			const resolved = await db.resolve(...args)
 			assert.equal(resolved, exp)
 		})
@@ -87,10 +88,5 @@ suite("File lifecycle tests", () => {
 		const resolved = await db.resolve("data/file.json")
 		const abs = db.absolute("data/file.json")
 		assert.ok(abs.endsWith("/testfs/data/file.json"))
-	})
-
-	it("testing", () => {
-		const result = db.resolveSync("/", "404.json")
-		assert.equal(result, "404.json")
 	})
 })

@@ -1,17 +1,17 @@
 export default DBFS;
 declare class DBFS extends DB {
     /**
-     * Creates a DocumentStat instance from fs.Stats.
-     * @param {import("node:fs").Stats} stats The fs.Stats object.
-     * @returns {DocumentStat} A new DocumentStat instance.
-     */
-    static createDocumentStatFrom(stats: import("node:fs").Stats): DocumentStat;
-    /**
      * Fixes path separators for Windows systems.
      * @param {string} path The path to fix.
      * @returns {string} The path with forward slashes.
      */
     static winFix(path: string): string;
+    /**
+     * Creates a DocumentStat instance from fs.Stats.
+     * @param {import("node:fs").Stats} stats The fs.Stats object.
+     * @returns {DocumentStat} A new DocumentStat instance.
+     */
+    static createDocumentStatFrom(stats: import("node:fs").Stats): DocumentStat;
     /**
      * Creates a DBFS instance from input parameters.
      * @param {object} input The input parameters for DBFS.
@@ -30,26 +30,6 @@ declare class DBFS extends DB {
      * @type {((file: string, data: any, ext: string) => any)[]}
      */
     savers: ((file: string, data: any, ext: string) => any)[];
-    /**
-     * Creates a new DBFS instance with a subset of the data and meta.
-     * @param {string} uri The URI to extract from the current DB.
-     * @returns {DBFS} A new DBFS instance with extracted data.
-     */
-    extract(uri: string): DBFS;
-    /**
-     * Returns the relative path from one path to another.
-     * @param {string} from The starting path.
-     * @param {string} to The destination path.
-     * @returns {string} The relative path from 'from' to 'to'.
-     */
-    relative(from: string, to: string): string;
-    /**
-     * Returns the stat of the document, uses meta (cache) if available.
-     * @throws {Error} If the document cannot be stat.
-     * @param {string} uri The URI to stat the document from.
-     * @returns {Promise<DocumentStat>} The document stat.
-     */
-    stat(uri: string): Promise<DocumentStat>;
     /**
      * Loads a document using a specific extension handler.
      * @param {string} ext The extension of the document.
@@ -83,5 +63,5 @@ declare class DBFS extends DB {
     }): Promise<DocumentEntry[]>;
 }
 import DB from "@nan0web/db";
-import { DocumentStat } from "@nan0web/db";
 import { DocumentEntry } from "@nan0web/db";
+import { DocumentStat } from "@nan0web/db";

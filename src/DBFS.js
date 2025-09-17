@@ -24,81 +24,7 @@ class DBFS extends DB {
 		/** @param {string} file @param {any} data @param {string} ext */
 		(file, data, ext) => save(file, data),
 	]
-	/**
-	 * Creates a new DBFS instance with a subset of the data and meta.
-	 * @param {string} uri The URI to extract from the current DB.
-	 * @returns {DBFS} A new DBFS instance with extracted data.
-	 */
-	// @ts-ignore DBFS extends DB
-	extract(uri) {
-		const db = super.extract(uri)
-		// Convert the base DB instance to DBFS
-		const dbfs = new DBFS({ root: db.root, cwd: db.cwd })
-		dbfs.meta = db.meta
-		dbfs.data = db.data
-		return dbfs
-	}
-	/**
-	 * Gets the extension of a URI in lowercase.
-	 * @param {string} uri The URI to get the extension from.
-	 * @returns {string} The extension in lowercase, e.g., '.txt'.
-	 */
-	extname(uri) {
-		return extname(uri).toLowerCase()
-	}
-	/**
-	 * Resolves a relative URI to a path within the DBFS root.
-	 * @param {...string} args The path segments to resolve.
-	 * @returns {Promise<string>} The resolved path relative to the DBFS root.
-	 */
-	async resolve(...args) {
-		return this.resolveSync(...args)
-	}
-	/**
-	 * Resolves a relative URI to a path within the DBFS root.
-	 * @param {...string} args The path segments to resolve.
-	 * @returns {string} The resolved path relative to the DBFS root.
-	 */
-	resolveSync(...args) {
-		const root = this.absolute()
-		let path = this.absolute(...args)
-		if (path.startsWith("/")) {
-			if (path.startsWith(root)) {
-				path = path.slice(root.length)
-			}
-		}
-		if (!path) return "."
-		return this.relative(root, path).replace(/^(\.\.\/)+/g, "")
-	}
-	/**
-	 * Returns the absolute path of the resolved path.
-	 * @param  {...string} args The path segments to resolve.
-	 * @return {string} The resolved absolute path.
-	 */
-	absolute(...args) {
-		const root = this.root.endsWith("/") ? this.root.slice(0, -1) : this.root
-		return DBFS.winFix(resolve(this.cwd, root, ...args))
-	}
-	/**
-	 * Returns the relative path from one path to another.
-	 * @param {string} from The starting path.
-	 * @param {string} to The destination path.
-	 * @returns {string} The relative path from 'from' to 'to'.
-	 */
-	relative(from, to) {
-		return DBFS.winFix(relative(from, to))
-	}
-	/**
-	 * Returns the stat of the document, uses meta (cache) if available.
-	 * @throws {Error} If the document cannot be stat.
-	 * @param {string} uri The URI to stat the document from.
-	 * @returns {Promise<DocumentStat>} The document stat.
-	 */
-	async stat(uri) {
-		const stat = await super.stat(uri)
-		// Ensure we return a DocumentStat instance
-		return new DocumentStat(stat)
-	}
+
 	/**
 	 * Returns the stat of the document without meta (cache) check.
 	 * ```
@@ -285,6 +211,14 @@ class DBFS extends DB {
 	}
 
 	/**
+	 * Fixes path separators for Windows systems.
+	 * @param {string} path The path to fix.
+	 * @returns {string} The path with forward slashes.
+	 */
+	static winFix(path) {
+		return "/" === sep ? path : path.replaceAll(sep, "/")
+	}
+	/**
 	 * Creates a DocumentStat instance from fs.Stats.
 	 * @param {import("node:fs").Stats} stats The fs.Stats object.
 	 * @returns {DocumentStat} A new DocumentStat instance.
@@ -312,14 +246,6 @@ class DBFS extends DB {
 			isSocket: stats.isSocket(),
 			isSymbolicLink: stats.isSymbolicLink(),
 		})
-	}
-	/**
-	 * Fixes path separators for Windows systems.
-	 * @param {string} path The path to fix.
-	 * @returns {string} The path with forward slashes.
-	 */
-	static winFix(path) {
-		return "/" === sep ? path : path.replaceAll(sep, "/")
 	}
 	/**
 	 * Creates a DBFS instance from input parameters.
