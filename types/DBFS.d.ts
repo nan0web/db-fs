@@ -1,5 +1,6 @@
 export default DBFS;
 declare class DBFS extends DB {
+    static FS: typeof FS;
     /**
      * Fixes path separators for Windows systems.
      * @param {string} path The path to fix.
@@ -30,6 +31,16 @@ declare class DBFS extends DB {
      * @type {((file: string, data: any, ext: string) => any)[]}
      */
     savers: ((file: string, data: any, ext: string) => any)[];
+    /**
+     * @returns {typeof FS}
+     */
+    get FS(): typeof FS;
+    /**
+     * Creates a new DB instance with a subset of the data and meta.
+     * @param {string} uri The URI to extract from the current DB.
+     * @returns {DBFS}
+     */
+    extract(uri: string): DBFS;
     /**
      * Loads a document using a specific extension handler.
      * @param {string} ext The extension of the document.
@@ -63,5 +74,6 @@ declare class DBFS extends DB {
     }): Promise<DocumentEntry[]>;
 }
 import DB from "@nan0web/db";
+import FS from "./FS.js";
 import { DocumentEntry } from "@nan0web/db";
 import { DocumentStat } from "@nan0web/db";

@@ -1,9 +1,8 @@
-import { resolve, extname, relative, sep } from "node:path"
-import { appendFileSync, existsSync, mkdirSync, statSync, readdirSync, unlinkSync, rmdirSync } from "node:fs"
 import DB, { DocumentStat, DocumentEntry } from "@nan0web/db"
-import { load, loadTXT, save } from "./file-system/index.js"
+import FS from "./FS.js"
 
 class DBFS extends DB {
+	static FS = FS
 	/**
 	 * Array of loader functions that attempt to load data from a file path.
 	 * Each loader returns false if it cannot handle the data format.
@@ -11,9 +10,9 @@ class DBFS extends DB {
 	 */
 	loaders = [
 		/** @param {string} file @param {any} data @param {string} ext */
-		(file, data, ext) => ".txt" === ext ? loadTXT(file, "", true) : false,
+		(file, data, ext) => ".txt" === ext ? this.FS.loadTXT(file, "", true) : false,
 		/** @param {string} file @param {any} data @param {string} ext */
-		(file, data, ext) => load(file),
+		(file, data, ext) => this.FS.load(file),
 	]
 	/**
 	 * Array of saver functions that attempt to save data to a file path.
@@ -22,8 +21,29 @@ class DBFS extends DB {
 	 */
 	savers = [
 		/** @param {string} file @param {any} data @param {string} ext */
-		(file, data, ext) => save(file, data),
+		(file, data, ext) => this.FS.save(file, data),
 	]
+
+	/**
+	 * @returns {typeof FS}
+	 */
+	get FS() {
+		return /** @type {typeof DBFS} */ (this.constructor).FS
+	}
+
+	/**
+	 * Creates a new DB instance with a subset of the data and meta.
+	 * @param {string} uri The URI to extract from the current DB.
+	 * @returns {DBFS}
+	 */
+	extract(uri) {
+		return DBFS.from(super.extract(uri))
+	}
+
+	location(...args) {
+		const abs = super.absolute(...args)
+		return this.FS.resolve(this.cwd, abs.startsWith("/") ? abs.slice(1) : abs)
+	}
 
 	/**
 	 * Returns the stat of the document without meta (cache) check.
@@ -34,15 +54,16 @@ class DBFS extends DB {
 	 * @returns {Promise<DocumentStat>} The document stat.
 	 */
 	async statDocument(uri) {
+		this.console.debug("Getting document statistics", { uri })
 		const file = await this.resolve(uri)
-		const path = resolve(this.cwd, this.root, file)
+		const path = this.FS.resolve(this.cwd, this.root, file)
 		try {
-			if (!existsSync(path)) {
+			if (!this.FS.existsSync(path)) {
 				return new DocumentStat({
 					error: new Error("Document not found")
 				})
 			}
-			return DBFS.createDocumentStatFrom(statSync(path))
+			return DBFS.createDocumentStatFrom(this.FS.statSync(path))
 		} catch (/** @type {any} */ err) {
 			return new DocumentStat({
 				error: err
@@ -56,6 +77,7 @@ class DBFS extends DB {
 	 * @returns {Promise<any>} The loaded document or the default value.
 	 */
 	async loadDocument(uri, defaultValue = "") {
+		this.console.debug("Loading document", { uri, defaultValue })
 		const ext = this.extname(uri)
 		return await this.loadDocumentAs(ext, uri, defaultValue)
 	}
@@ -67,10 +89,11 @@ class DBFS extends DB {
 	 * @returns {Promise<any>} The loaded document or the default value.
 	 */
 	async loadDocumentAs(ext, uri, defaultValue = "") {
+		this.console.debug("Loading document as", { uri, ext, defaultValue })
 		await this.ensureAccess(uri, "r")
 		const file = await this.resolve(uri)
-		const path = resolve(this.cwd, this.root, file)
-		if (!existsSync(path)) return defaultValue
+		const path = this.FS.resolve(this.cwd, this.root, file)
+		if (!this.FS.existsSync(path)) return defaultValue
 		for (const loader of this.loaders) {
 			const res = loader(path, null, ext)
 			if (false !== res) {
@@ -86,8 +109,8 @@ class DBFS extends DB {
 	 */
 	async _buildPath(uri) {
 		const dir = await this.resolve(uri, "..")
-		const path = resolve(this.cwd, this.root, dir)
-		mkdirSync(path, { recursive: true })
+		const path = this.FS.resolve(this.cwd, this.root, dir)
+		this.FS.mkdirSync(path, { recursive: true })
 	}
 	/**
 	 * Saves a document to the given URI.
@@ -97,10 +120,11 @@ class DBFS extends DB {
 	 * @returns {Promise<boolean>} True if saved successfully, false otherwise.
 	 */
 	async saveDocument(uri, document) {
+		this.console.debug("Saving document", { uri, document })
 		await this.ensureAccess(uri, "w")
 		await this._buildPath(uri)
 		const file = await this.resolve(uri)
-		const path = resolve(this.cwd, this.root, file)
+		const path = this.FS.resolve(this.cwd, this.root, file)
 		const ext = this.extname(uri)
 		for (const saver of this.savers) {
 			if (false !== saver(path, document, ext)) {
@@ -120,11 +144,12 @@ class DBFS extends DB {
 	 * @returns {Promise<boolean>} True if written successfully, false otherwise.
 	 */
 	async writeDocument(uri, chunk) {
+		this.console.debug("Writing document", { uri, chunk })
 		await this.ensureAccess(uri, "w")
 		await this._buildPath(uri)
 		const file = await this.resolve(uri)
-		const path = resolve(this.cwd, this.root, file)
-		appendFileSync(path, chunk, {
+		const path = this.FS.resolve(this.cwd, this.root, file)
+		this.FS.appendFileSync(path, chunk, {
 			encoding: /** @type {BufferEncoding} */ (this.encoding)
 		})
 		return true
@@ -136,22 +161,23 @@ class DBFS extends DB {
 	 * @returns {Promise<boolean>} True if dropped successfully, false otherwise.
 	 */
 	async dropDocument(uri) {
+		this.console.debug("Deleting document", { uri })
 		await this.ensureAccess(uri, "d")
 		const file = await this.resolve(uri)
 		let stat = await this.statDocument(uri)
 		if (!stat.exists) return false
-		const path = resolve(this.cwd, this.root, file)
+		const path = this.FS.resolve(this.cwd, this.root, file)
 		if (stat.isDirectory) {
 			const nested = Array.from(this.meta.keys()).filter(u => u.startsWith(file + "/")).length
 			if (nested > 0) {
 				throw new Error("Directory has children, delete them first")
 			}
-			rmdirSync(path)
+			this.FS.rmdirSync(path)
 			this.meta.delete(file)
 			this.data.delete(file)
 			return true
 		}
-		unlinkSync(path)
+		this.FS.unlinkSync(path)
 		stat = await this.statDocument(uri)
 		if (!stat.exists) {
 			this.data.delete(file)
@@ -185,14 +211,14 @@ class DBFS extends DB {
 	 * @returns {Promise<DocumentEntry[]>} The list of directory entries.
 	 */
 	async listDir(uri, { depth = 0, skipStat = false } = {}) {
-		const path = resolve(this.cwd, this.root, uri)
-		const entries = readdirSync(path, { withFileTypes: true })
+		const path = this.FS.resolve(this.cwd, this.root, uri)
+		const entries = this.FS.readdirSync(path, { withFileTypes: true })
 		const files = entries.map((entry) => {
 			let stat = new DocumentStat()
 			if (!skipStat) {
 				try {
-					const entryPath = resolve(path, entry.name)
-					stat = DBFS.createDocumentStatFrom(statSync(entryPath))
+					const entryPath = this.FS.resolve(path, entry.name)
+					stat = DBFS.createDocumentStatFrom(this.FS.statSync(entryPath))
 				} catch (err) {
 					stat = new DocumentStat({
 						error: /** @type {Error} */ (err)
@@ -202,7 +228,7 @@ class DBFS extends DB {
 			return new DocumentEntry({
 				stat,
 				name: entry.name,
-				path: relative(this.cwd, resolve(this.cwd, entry.parentPath, entry.name)),
+				path: this.FS.relative(this.cwd, this.FS.resolve(this.cwd, path, entry.name)),
 				depth,
 			})
 		})
@@ -216,7 +242,7 @@ class DBFS extends DB {
 	 * @returns {string} The path with forward slashes.
 	 */
 	static winFix(path) {
-		return "/" === sep ? path : path.replaceAll(sep, "/")
+		return "/" === this.FS.sep ? path : path.replaceAll(this.FS.sep, "/")
 	}
 	/**
 	 * Creates a DocumentStat instance from fs.Stats.

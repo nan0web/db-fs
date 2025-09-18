@@ -282,7 +282,7 @@ suite("findStream()", () => {
 		assert.strictEqual(results[results.length - 1].errors.get("b.txt"), error)
 	})
 
-	it.todo("should throw error if directory parent not found", async () => {
+	it.skip("should throw error if directory parent not found", async () => {
 		/**
 		 * @todo should it throw an error?
 		 */

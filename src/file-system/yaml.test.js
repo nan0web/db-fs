@@ -1,10 +1,14 @@
 import { suite, it, beforeEach, afterEach } from "node:test"
 import assert from "node:assert/strict"
 import { existsSync, writeFileSync, unlinkSync, mkdirSync } from "node:fs"
-import path from "node:path"
+import path, { dirname } from "node:path"
 import { loadYAML, saveYAML } from "./yaml.js"
 
 const cwd = path.join(process.cwd(), "__test_fs__")
+
+const ensureDir = (dir) => {
+	mkdirSync(dir, { recursive: true })
+}
 
 /**
  * @desc Tests YAML parsing and file I/O functionality.
@@ -25,6 +29,7 @@ suite("YAML Tests", () => {
 
 	it("should parse valid YAML correctly using loadYAML", () => {
 		const yamlStr = "name: John\nage: 30\n"
+		ensureDir(dirname(tmpYAML))
 		writeFileSync(tmpYAML, yamlStr)
 		const result = loadYAML(tmpYAML)
 		const expected = { name: "John", age: 30 }
@@ -33,6 +38,7 @@ suite("YAML Tests", () => {
 
 	it("should stringify object correctly using saveYAML", () => {
 		const obj = { name: "John", age: 30 }
+		ensureDir(dirname(tmpYAML))
 		const result = saveYAML(tmpYAML, obj)
 		const expected = "name: John\nage: 30\n"
 		assert.strictEqual(result, expected)
@@ -40,6 +46,7 @@ suite("YAML Tests", () => {
 	})
 
 	it("should throw error for broken YAML in loadYAML when softError is false", () => {
+		ensureDir(dirname(brokenYAML))
 		writeFileSync(brokenYAML, "name: John\n  age: 30")
 		assert.throws(() => {
 			loadYAML(brokenYAML, false)
@@ -47,6 +54,7 @@ suite("YAML Tests", () => {
 	})
 
 	it("should return null for broken YAML in loadYAML when softError is true", () => {
+		ensureDir(dirname(brokenYAML))
 		writeFileSync(brokenYAML, "name: John\n  age: 30")
 		const result = loadYAML(brokenYAML, true)
 		assert.strictEqual(result, null)
