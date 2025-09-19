@@ -42,6 +42,12 @@ declare class DBFS extends DB {
      */
     extract(uri: string): DBFS;
     /**
+     * Returns location for the provided uris.
+     * @param  {...any} args
+     * @returns {string} Absolute location on the drive.
+     */
+    location(...args: any[]): string;
+    /**
      * Loads a document using a specific extension handler.
      * @param {string} ext The extension of the document.
      * @param {string} uri The URI to load the document from.

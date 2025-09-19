@@ -40,6 +40,11 @@ class DBFS extends DB {
 		return DBFS.from(super.extract(uri))
 	}
 
+	/**
+	 * Returns location for the provided uris.
+	 * @param  {...any} args
+	 * @returns {string} Absolute location on the drive.
+	 */
 	location(...args) {
 		const abs = super.absolute(...args)
 		return this.FS.resolve(this.cwd, abs.startsWith("/") ? abs.slice(1) : abs)

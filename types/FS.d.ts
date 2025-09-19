@@ -45,9 +45,9 @@ export default class FS {
      * @function
      * @param {string} path - Directory path.
      * @param {object} [options] - Read options.
-     * @returns {string[]} Directory entries.
+     * @returns {import("node:fs").Dirent[]} Directory entries.
      */
-    static readdirSync(path: string, options?: object): string[];
+    static readdirSync(path: string, options?: object): import("node:fs").Dirent[];
     /**
      * Deletes a file.
      * @function
