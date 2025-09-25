@@ -62,12 +62,19 @@ declare class DBFS extends DB {
      */
     _buildPath(uri: string): Promise<void>;
     /**
+     * Deletes a document or documents at the given URI(s).
+     * @throws {Error} If the document cannot be dropped.
+     * @param {string | string[]} uri The URI(s) of the document(s) to drop.
+     * @returns {Promise<boolean | boolean[]>} True if dropped successfully, false otherwise.
+     */
+    drop(uri: string | string[]): Promise<boolean | boolean[]>;
+    /**
      * Ensures the current operation has proper access rights.
      * @param {string} uri The URI to check access for.
      * @param {"r"|"w"|"d"} [level="r"] The access level: read, write, or delete.
      * @returns {Promise<void>} True if access is granted.
      */
-    ensureAccess(uri: string, level?: "r" | "w" | "d" | undefined): Promise<void>;
+    ensureAccess(uri: string, level?: "r" | "w" | "d"): Promise<void>;
     /**
      * Lists the contents of a directory.
      * @param {string} uri The directory URI to list.

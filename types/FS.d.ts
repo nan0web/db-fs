@@ -94,7 +94,7 @@ export default class FS {
         softError?: boolean | undefined;
         delimiter?: string | undefined;
         quote?: string | undefined;
-    } | undefined): any;
+    }): any;
     /**
      * Loads text file, optionally splitting by delimiter.
      * @function
@@ -103,7 +103,7 @@ export default class FS {
      * @param {boolean} [softError=false] - Suppress errors.
      * @returns {string|string[]} File content as string or array.
      */
-    static loadTXT(file: string, delimiter?: string | undefined, softError?: boolean | undefined): string | string[];
+    static loadTXT(file: string, delimiter?: string, softError?: boolean): string | string[];
     /**
      * Saves data to file with automatic format handling.
      * @function

@@ -23,7 +23,7 @@ export function load(file: string, opts?: {
     softError?: boolean | undefined;
     delimiter?: string | undefined;
     quote?: string | undefined;
-} | undefined): any;
+}): any;
 import { saveCSV } from "./csv.js";
 import { loadCSV } from "./csv.js";
 import { saveJSON } from "./json.js";

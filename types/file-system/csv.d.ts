@@ -8,7 +8,7 @@
  * @returns {Object[]} Array of objects representing CSV rows.
  * @throws {Error} If file not found or parsing fails.
  */
-export function loadCSV(filePath: string, delimiter?: string | undefined, quote?: string | undefined, softError?: boolean | undefined): any[];
+export function loadCSV(filePath: string, delimiter?: string, quote?: string, softError?: boolean): any[];
 /**
  * Saves data as CSV file.
  * @function
@@ -19,7 +19,7 @@ export function loadCSV(filePath: string, delimiter?: string | undefined, quote?
  * @param {string} [eol='\n'] - End of line character.
  * @returns {string} The file content.
  */
-export function saveCSV(filePath: string, data: any[], delimiter?: string | undefined, quote?: string | undefined, eol?: string | undefined): string;
+export function saveCSV(filePath: string, data: any[], delimiter?: string, quote?: string, eol?: string): string;
 /**
  * Parses CSV content into 2D array.
  * @function
@@ -28,4 +28,4 @@ export function saveCSV(filePath: string, data: any[], delimiter?: string | unde
  * @param {string} [quote='"'] - Quote character.
  * @returns {Array[]} 2D array of parsed CSV data.
  */
-export function parseCSV(content: string, delimiter?: string | undefined, quote?: string | undefined): any[][];
+export function parseCSV(content: string, delimiter?: string, quote?: string): any[][];
