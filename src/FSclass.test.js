@@ -175,7 +175,7 @@ suite("FS utility tests", () => {
 			]
 		})
 		await db.connect()
-		await db.dump()
+		await db.dump(db)
 		const stat1 = FS.statSync(db.location("1.txt"))
 		const stat2 = FS.statSync(db.location("2.json"))
 		assert.ok(stat1.mtimeMs)

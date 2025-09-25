@@ -98,7 +98,9 @@ class DBFS extends DB {
 		await this.ensureAccess(uri, "r")
 		const file = await this.resolve(uri)
 		const path = this.FS.resolve(this.cwd, this.root, file)
-		if (!this.FS.existsSync(path)) return defaultValue
+		if (!this.FS.existsSync(path)) {
+			return this.data.has(file) ? this.data.get(file) : defaultValue
+		}
 		for (const loader of this.loaders) {
 			const res = loader(path, null, ext)
 			if (false !== res) {

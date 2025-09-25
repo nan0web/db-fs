@@ -129,11 +129,9 @@ describe("DBFS tests", () => {
 		})
 		await db.connect()
 
-		// Get dump
-		await db.dump()
-
 		const fs = new DBFS({ root })
 		await fs.connect()
+		await db.dump(fs)
 		const txt = await fs.loadDocument("test1.txt")
 		const json = await fs.loadDocument("test2.json")
 		const csv = await fs.loadDocument("test3.csv")
@@ -294,9 +292,9 @@ describe("DBFS directory index handling", () => {
 	it("should load index.txt and populate meta", async () => {
 		// Setup: Create an index.txt file manually
 		const indexContent = [
-			"F file1.txt 2s 99",
-			"F file2.json 3s 999",
-			"D subdir/ 1s 9999"
+			"file1.txt 2s 99",
+			"file2.json 3s 999",
+			"subdir/ 1s 9999"
 		].join("\n")
 		await db.saveDocument("index.txt", indexContent)
 

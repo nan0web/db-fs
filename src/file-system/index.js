@@ -33,7 +33,7 @@ function load(file, opts = {}) {
 	}
 	if ([".jsonl"].includes(format)) {
 		const rows = loadTXT(file, delimiter, softError)
-		return Array.from(rows).map(r => JSON.parse(r))
+		return Array.from(rows).filter(Boolean).map(r => JSON.parse(r))
 	}
 	if (['.yaml', '.yml'].includes(ext)) {
 		return loadYAML(file, softError)
