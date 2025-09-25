@@ -1,16 +1,17 @@
 import { suite, it, beforeEach, afterEach } from "node:test"
 import assert from "node:assert/strict"
-import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from "node:fs"
+import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync, rmdirSync } from "node:fs"
 import path from "node:path"
 import { parseCSV, loadCSV, saveCSV } from "./csv.js"
+import TestDir from "../test.js"
 
-const cwd = path.join(process.cwd(), "__test_fs__")
+const testDir = new TestDir("csv-test-js")
 
 /**
  * @desc Tests CSV parsing and file I/O functionality.
  */
 suite("CSV Tests", () => {
-	const tmpDir = path.join(cwd, ".tmp_csv_test")
+	const tmpDir = testDir.root
 	const tmpCSV = path.join(tmpDir, "test.csv")
 	const emptyCSV = path.join(tmpDir, "empty.csv")
 
@@ -21,6 +22,7 @@ suite("CSV Tests", () => {
 	afterEach(() => {
 		if (existsSync(tmpCSV)) unlinkSync(tmpCSV)
 		if (existsSync(emptyCSV)) unlinkSync(emptyCSV)
+		if (existsSync(tmpDir)) rmdirSync(tmpDir)
 	})
 
 	it("should parse simple CSV correctly", () => {

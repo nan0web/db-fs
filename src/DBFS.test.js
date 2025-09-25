@@ -1,11 +1,12 @@
 import { describe, it, beforeEach, afterEach, before } from "node:test"
 import assert from "node:assert/strict"
-import DBFS, { DocumentEntry, DocumentStat } from "./index.js"
+import { DocumentEntry, DocumentStat } from "./index.js"
 import { sep, resolve } from "node:path"
-import { rmdirSync, mkdirSync, existsSync, readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { NoConsole } from "@nan0web/log"
+import TestDir, { DBFS } from "./test.js"
 
-const testDir = "__test_fs__"
+const testDir = new TestDir("dbfs-test-js")
 
 /**
  * @desc Tests the basic functionality of DBFS.
@@ -19,19 +20,20 @@ describe("DBFS tests", () => {
 	before(() => {
 	})
 
-	beforeEach(() => {
-		const resolvedDir = resolve(testDir)
-		if (existsSync(resolvedDir)) {
-			rmdirSync(resolvedDir, { recursive: true })
-		}
-		mkdirSync(resolvedDir, { recursive: true })
-		db = new DBFS({ root: testDir })
+	beforeEach(async () => {
+		testDir.erase()
+		db = new DBFS({ root: testDir.root })
+		await db.connect()
 		files = [
 			new DocumentEntry({ name: "file1.txt", stat: new DocumentStat({ size: 10, mtimeMs: 1000 }), depth: 0 }),
 			new DocumentEntry({ name: "file2.txt", stat: new DocumentStat({ size: 20, mtimeMs: 2000 }), depth: 0 }),
 			new DocumentEntry({ name: "dir/", stat: new DocumentStat({ size: 0, mtimeMs: 3000, isDirectory: true }), depth: 0 }),
 			new DocumentEntry({ name: "dir/file3.txt", stat: new DocumentStat({ size: 30, mtimeMs: 4000 }), depth: 1 }),
 		]
+	})
+
+	afterEach(async () => {
+		await db.disconnect()
 	})
 
 	it("should resolve async", async () => {
@@ -53,7 +55,6 @@ describe("DBFS tests", () => {
 			output.push(`\r${bar} ${count} files found`)
 		}
 
-		await db.connect()
 		let listedFiles = []
 		total = files.length
 
@@ -71,15 +72,11 @@ describe("DBFS tests", () => {
 		}
 
 		assert.deepStrictEqual(listedFiles, files)
-
-		await db.disconnect()
 	})
 
 	it("should allow access to config file", async () => {
-		await db.connect()
 		await db.saveDocument("llm.config.js", "module.exports = {}")
 		await db.ensureAccess("llm.config.js", "r")
-		await db.disconnect()
 		assert.ok(true)
 	})
 
@@ -113,7 +110,7 @@ describe("DBFS tests", () => {
 
 	it("should create dump with indexes and list dumped dir", async () => {
 		// Create test data
-		const root = testDir + "/dump"
+		const root = testDir.join("dump")
 		const predefined = [
 			["test1.txt", "content1"],
 			["test2.json", { key: "value" }],
@@ -142,6 +139,8 @@ describe("DBFS tests", () => {
 
 		const content = await fs.listDir(".")
 		assert.equal(content.length, 3)
+
+		await db.disconnect()
 	})
 })
 
@@ -189,19 +188,18 @@ describe("DBFS.extract", () => {
 describe("DBFS saveDocument and indexing tests", () => {
 	/** @type {DBFS} */
 	let db
+	const root = testDir.join("indexes")
 
-	beforeEach(() => {
-		db = new DBFS({ root: testDir + "/indexes" })
+	beforeEach(async () => {
+		db = new DBFS({ root })
+		await db.connect()
 	})
 
-	afterEach(() => {
-		// Clean up test directory
-		rmdirSync(resolve(testDir), { recursive: true })
+	afterEach(async () => {
+		await db.disconnect()
 	})
 
 	it("should create indexes when saving documents", async () => {
-		await db.connect()
-
 		// Save a document
 		const result = await db.saveDocument("index-test.txt", "test content")
 		assert.ok(result)
@@ -217,13 +215,9 @@ describe("DBFS saveDocument and indexing tests", () => {
 		const stat = db.meta.get("index-test.txt")
 		assert.ok(stat.exists)
 		assert.ok(stat.isFile)
-
-		await db.disconnect()
 	})
 
 	it("should update indexes when saving existing documents", async () => {
-		await db.connect()
-
 		// Save initial document
 		await db.saveDocument("update-test.json", { version: 1 })
 
@@ -242,8 +236,6 @@ describe("DBFS saveDocument and indexing tests", () => {
 
 		// Check that the stat was updated (mtime should be different)
 		assert.ok(updatedStat.mtimeMs >= initialStat.mtimeMs)
-
-		await db.disconnect()
 	})
 })
 
@@ -253,19 +245,21 @@ describe("DBFS saveDocument and indexing tests", () => {
 describe("DBFS directory index handling", () => {
 	/** @type {DBFS} */
 	let db
+	const root = testDir.join("indexes")
 
-	beforeEach(() => {
-		db = new DBFS({ root: testDir + "/indexes" })
-		mkdirSync(resolve(testDir), { recursive: true })
+	beforeEach(async () => {
+		testDir.erase()
+		db = new DBFS({ root })
+		await db.connect()
 	})
 
-	afterEach(() => {
-		rmdirSync(resolve(testDir), { recursive: true })
+	afterEach(async () => {
+		await db.disconnect()
 	})
 
 	it("should save index.txt with directory entries", async () => {
 		const db = new DBFS({
-			root: testDir + "/indexes",
+			root,
 			predefined: [
 				["file1.txt", "text content"],
 				["file2.json", { text: "content" }],
@@ -287,6 +281,8 @@ describe("DBFS directory index handling", () => {
 		assert.ok(content.includes("file1.txt"), "index.txt should contain file1.txt")
 		assert.ok(content.includes("file2.json"), "index.txt should contain file2.json")
 		assert.ok(content.includes("subdir/"), "index.txt should contain subdir/")
+
+		await db.disconnect()
 	})
 
 	it("should load index.txt and populate meta", async () => {
@@ -360,8 +356,6 @@ describe("DBFS directory index handling", () => {
 	})
 
 	it.skip("should automatically update indexes when saving documents", async () => {
-		await db.connect()
-
 		// Save multiple documents
 		await db.saveDocument("doc1.md", "# Document 1")
 		await db.saveDocument("doc2.xml", "<doc>Document 2</doc>")
@@ -391,7 +385,5 @@ describe("DBFS directory index handling", () => {
 		const jsonlContent = readFileSync(jsonlIndexPath, "utf-8")
 		const lines = jsonlContent.trim().split("\n")
 		assert.ok(lines.length >= 3, "index.jsonl should contain at least 3 entries")
-
-		await db.disconnect()
 	})
 })

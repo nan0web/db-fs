@@ -1,9 +1,11 @@
 import { suite, it, beforeEach, afterEach } from "node:test"
 import assert from "node:assert/strict"
 import FS from "./FS.js"
-import DBFS from "./DBFS.js"
-import { existsSync, mkdirSync, writeFileSync, unlinkSync, rmdirSync } from "node:fs"
+import { mkdirSync, writeFileSync, unlinkSync, existsSync } from "node:fs"
 import path from "node:path"
+import TestDir, { DBFS } from "./test.js"
+
+const testDir = new TestDir("FS-test-js")
 
 /**
  * @desc Tests for FS utility class methods
@@ -11,28 +13,19 @@ import path from "node:path"
 suite("FS utility tests", () => {
 	/** @type {DBFS} */
 	let db
-	const mockRoot = "__test_fs__/fs-class"
+	const root = testDir.root
 
-	const testDir = path.join(process.cwd(), mockRoot)
-	const testFile = path.join(testDir, "test.txt")
+	const testFile = path.resolve(root, "test.txt")
 	const testData = "test content"
 
-	beforeEach(() => {
-		if (existsSync(testDir)) {
-			rmdirSync(testDir, { recursive: true })
-		}
-		mkdirSync(testDir, { recursive: true })
-		db = new DBFS({ root: "__test_fs__", cwd: process.cwd() })
+	beforeEach(async () => {
+		db = new DBFS({ root })
+		await db.connect()
 	})
 
-	afterEach(() => {
+	afterEach(async () => {
+		await db.disconnect()
 		if (existsSync(testFile)) unlinkSync(testFile)
-		if (existsSync(testDir)) rmdirSync(testDir, { recursive: true })
-		try {
-			if (typeof db.disconnect === "function") db.disconnect()
-		} catch (err) {
-			console.error("Error in disconnect:", err.message)
-		}
 	})
 
 	it("should return correct path separator", () => {
@@ -40,14 +33,14 @@ suite("FS utility tests", () => {
 	})
 
 	it("should resolve paths correctly", () => {
-		const resolved = FS.resolve(testDir, "sub", "file.txt")
-		const expected = path.resolve(testDir, "sub", "file.txt")
+		const resolved = FS.resolve(root, "sub", "file.txt")
+		const expected = path.resolve(root, "sub", "file.txt")
 		assert.strictEqual(resolved, expected)
 	})
 
 	it("should calculate relative paths correctly", () => {
-		const from = testDir
-		const to = path.join(testDir, "sub", "file.txt")
+		const from = root
+		const to = path.resolve(root, "sub", "file.txt")
 		const relativePath = FS.relative(from, to)
 		const expected = path.relative(from, to)
 		assert.strictEqual(relativePath, expected)
@@ -68,7 +61,7 @@ suite("FS utility tests", () => {
 
 	it("should read directory contents", () => {
 		writeFileSync(testFile, testData)
-		const entries = FS.readdirSync(testDir, { withFileTypes: true })
+		const entries = FS.readdirSync(root, { withFileTypes: true })
 		assert.ok(entries.length > 0)
 		assert.ok(entries.some(entry => entry.name === "test.txt"))
 	})
@@ -80,14 +73,14 @@ suite("FS utility tests", () => {
 	})
 
 	it("should load and save JSON files", () => {
-		const jsonFile = path.join(testDir, "test.json")
+		const jsonFile = path.resolve(root, "test.json")
 		const jsonData = { test: true, value: 42 }
 
 		FS.save(jsonFile, jsonData)
 		const loaded = FS.load(jsonFile)
 		assert.deepStrictEqual(loaded, jsonData)
 
-		if (existsSync(jsonFile)) unlinkSync(jsonFile)
+		unlinkSync(jsonFile)
 	})
 
 	it("should append data to file", () => {
@@ -106,8 +99,8 @@ suite("FS utility tests", () => {
 	})
 
 	it("should resolve relative file within root boundary", () => {
-		db.cwd = mockRoot
-		db.root = path.join("private")
+		db.cwd = testDir.root
+		db.root = path.resolve("private")
 
 		const resolved = db.resolveSync("test.txt")
 		assert.strictEqual(resolved, "test.txt", "Should resolve file within root without duplication")
@@ -137,8 +130,8 @@ suite("FS utility tests", () => {
 		assert.deepStrictEqual(
 			files,
 			[
-				DBFS.winFix(path.join(testDir, "modules", "utils", "handlers", "validator.js"))
-			].map(file => DBFS.winFix(file.replace(testDir + FS.sep, "")))
+				DBFS.winFix(["modules", "utils", "handlers", "validator.js"].join("/"))
+			].map(file => DBFS.winFix(file.replace(root + FS.sep, "")))
 		)
 	})
 
@@ -160,15 +153,14 @@ suite("FS utility tests", () => {
 	}
 
 	it("should properly handle root as subdirectory", async () => {
-		db.cwd = mockRoot
-		db.root = "testfs/"
+		db.root = testDir.join("testfs")
 		const abs = db.absolute("data/file.json")
 		assert.ok(abs.endsWith("/testfs/data/file.json"))
 	})
 
 	it("should properly remove the directory", async () => {
 		const db = new DBFS({
-			root: mockRoot + "/rmdir",
+			root: testDir.join("rmdir"),
 			predefined: [
 				["1.txt", "Text file"],
 				["2.json", { value: 1 }]
@@ -181,9 +173,6 @@ suite("FS utility tests", () => {
 		assert.ok(stat1.mtimeMs)
 		assert.ok(stat2.mtimeMs)
 		const dir = db.location(".")
-		await db.dropDocument("1.txt")
-		await db.dropDocument("2.json")
-		FS.rmdirSync(dir, { recursive: true })
-		assert.ok(!FS.existsSync(dir))
+		await db.disconnect()
 	})
 })

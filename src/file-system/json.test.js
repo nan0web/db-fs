@@ -1,16 +1,17 @@
 import { suite, it, beforeEach, afterEach } from "node:test"
 import assert from "node:assert/strict"
-import { existsSync, writeFileSync, unlinkSync, mkdirSync } from "node:fs"
+import { existsSync, writeFileSync, unlinkSync, mkdirSync, rmdirSync } from "node:fs"
 import path from "node:path"
 import { loadJSON, saveJSON, toJSON, fromJSON } from "./json.js"
+import TestDir from "../test.js"
 
-const cwd = path.join(process.cwd(), "__test_fs__")
+const testDir = new TestDir("json-test-js")
 
 /**
  * @desc Tests JSON parsing and file I/O functionality.
  */
 suite("JSON Tests", () => {
-	const tmpDir = path.join(cwd, ".tmp_json_test")
+	const tmpDir = testDir.root
 	const tmpJSON = path.join(tmpDir, "test.json")
 	const brokenJSON = path.join(tmpDir, "broken.json")
 
@@ -21,6 +22,7 @@ suite("JSON Tests", () => {
 	afterEach(() => {
 		if (existsSync(tmpJSON)) unlinkSync(tmpJSON)
 		if (existsSync(brokenJSON)) unlinkSync(brokenJSON)
+		if (existsSync(tmpDir)) rmdirSync(tmpDir)
 	})
 
 	it("should parse valid JSON correctly using fromJSON", () => {

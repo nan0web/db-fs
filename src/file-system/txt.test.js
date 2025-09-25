@@ -1,16 +1,17 @@
 import { suite, it, beforeEach, afterEach } from "node:test"
 import assert from "node:assert/strict"
-import { existsSync, writeFileSync, unlinkSync, mkdirSync } from "node:fs"
+import { existsSync, writeFileSync, unlinkSync, mkdirSync, rmdirSync } from "node:fs"
 import path from "node:path"
 import { loadTXT, saveTXT } from "./txt.js"
+import TestDir from "../test.js"
 
-const cwd = path.join(process.cwd(), "__test_fs__")
+const testDir = new TestDir("txt-test-js")
 
 /**
  * @desc Tests TXT file parsing and file I/O functionality.
  */
 suite("TXT Tests", () => {
-	const tmpDir = path.join(cwd, ".tmp_txt_test")
+	const tmpDir = testDir.root
 	const tmpTXT = path.join(tmpDir, "test.txt")
 
 	beforeEach(() => {
@@ -19,6 +20,7 @@ suite("TXT Tests", () => {
 
 	afterEach(() => {
 		if (existsSync(tmpTXT)) unlinkSync(tmpTXT)
+		if (existsSync(tmpDir)) rmdirSync(tmpDir)
 	})
 
 	it("should save array data as TXT with default delimiter", () => {

@@ -164,7 +164,7 @@ class DBFS extends DB {
 	/**
 	 * Deletes a document at the given URI.
 	 * @throws {Error} If the document cannot be dropped.
-	 * @param {string} uri The URI to drop the document from.
+	 * @param {string} uri The URI(s) of the document(s) to drop.
 	 * @returns {Promise<boolean>} True if dropped successfully, false otherwise.
 	 */
 	async dropDocument(uri) {
@@ -194,6 +194,23 @@ class DBFS extends DB {
 	}
 
 	/**
+	 * Deletes a document or documents at the given URI(s).
+	 * @throws {Error} If the document cannot be dropped.
+	 * @param {string | string[]} uri The URI(s) of the document(s) to drop.
+	 * @returns {Promise<boolean | boolean[]>} True if dropped successfully, false otherwise.
+	 */
+	async drop(uri) {
+		if (Array.isArray(uri)) {
+			const result = []
+			for (const u of uri) {
+				result.push(await this.dropDocument(u))
+			}
+			return result
+		}
+		return await this.dropDocument(uri)
+	}
+
+	/**
 	 * Ensures the current operation has proper access rights.
 	 * @param {string} uri The URI to check access for.
 	 * @param {"r"|"w"|"d"} [level="r"] The access level: read, write, or delete.
@@ -218,6 +235,7 @@ class DBFS extends DB {
 	 * @returns {Promise<DocumentEntry[]>} The list of directory entries.
 	 */
 	async listDir(uri, { depth = 0, skipStat = false } = {}) {
+		this.console.debug("Listing directory", { uri, depth, skipStat })
 		const path = this.FS.resolve(this.cwd, this.root, uri)
 		const entries = this.FS.readdirSync(path, { withFileTypes: true })
 		const files = entries.map((entry) => {
@@ -232,10 +250,14 @@ class DBFS extends DB {
 					})
 				}
 			}
+			const file = this.FS.relative(
+				this.FS.resolve(this.cwd, this.root),
+				this.FS.resolve(path, entry.name)
+			)
 			return new DocumentEntry({
 				stat,
 				name: entry.name,
-				path: this.FS.relative(this.cwd, this.FS.resolve(this.cwd, path, entry.name)),
+				path: file,
 				depth,
 			})
 		})
