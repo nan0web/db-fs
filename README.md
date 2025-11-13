@@ -30,12 +30,10 @@ How to save and load a JSON file?
 import DBFS from "@nan0web/db-fs"
 const db = new DBFS({ root: "__test_quick_start__" })
 await db.connect()
-
 const data = { name: "Test", value: 42 }
 await db.saveDocument("test.json", data)
 const loaded = await db.loadDocument("test.json")
 console.info(loaded) // ← { name: "Test", value: 42 }
-
 ```
 
 How to append content to a TXT file?
@@ -43,12 +41,10 @@ How to append content to a TXT file?
 import DBFS from "@nan0web/db-fs"
 const db = new DBFS({ root: "__test_append__" })
 await db.connect()
-
 await db.writeDocument("log.txt", "First line\n")
 await db.writeDocument("log.txt", "Second line")
 const content = await db.loadDocument("log.txt")
 console.info(content) // ← "First line\nSecond line"
-
 ```
 ## Directory Scanning
 
@@ -69,13 +65,11 @@ How to scan directory with findStream?
 import FS from "@nan0web/db-fs"
 const db = new FS()
 await db.connect()
-
 const files = []
-for await (const entry of db.findStream("src", { limit: 3, sort: "name", order: "asc" })) {
-	files.push(entry.file.name)
+for await (const entry of db.findStream("src", { limit: 99, sort: "name", order: "asc" })) {
+	files.push(entry.file.path)
 }
 console.info(files) // ← ['file-system', 'DBFS.js', 'DBFS.test.js']
-
 ```
 ## File Formats
 
@@ -90,7 +84,6 @@ How to save and load CSV file?
 import DBFS from "@nan0web/db-fs"
 const db = new DBFS({ root: "__test_csv__" })
 await db.connect()
-
 const data = [
 	{ Name: "John", Age: 30 },
 	{ Name: "Jane", Age: 25 }
@@ -98,7 +91,6 @@ const data = [
 await db.saveDocument("people.csv", data)
 const loaded = await db.loadDocument("people.csv")
 console.info(loaded) // ← [ { Name: "John", Age: 30 }, { Name: "Jane", Age: 25 } ]
-
 ```
 ## Playground
 
@@ -109,7 +101,7 @@ How to run CLI sandbox?
 git clone https://github.com/nan0web/db-fs.git
 cd db-fs
 npm install
-npm run playground
+npm run play
 ```
 
 ## API Reference
@@ -130,7 +122,6 @@ How to test saveDocument API?
 import DBFS from "@nan0web/db-fs"
 const db = new DBFS({ root: "__test_save_api__" })
 await db.connect()
-
 const result = await db.saveDocument("test.json", { a: 1 })
 console.info(result) // ← true
 ```
@@ -150,14 +141,11 @@ How to test loadDocument API?
 import DBFS from "@nan0web/db-fs"
 const db = new DBFS({ root: "__test_load_api__" })
 await db.connect()
-
 const empty = await db.loadDocument("missing.json", {})
 console.info(empty) // ← {}
-
 await db.saveDocument("data.json", { b: 2 })
 const loaded = await db.loadDocument("data.json")
 console.info(loaded) // ← { b: 2 }
-
 ```
 ### `writeDocument(uri, chunk)`
 
@@ -175,12 +163,10 @@ How to test writeDocument API?
 import DBFS from "@nan0web/db-fs"
 const db = new DBFS({ root: "__test_write_api__" })
 await db.connect()
-
 await db.writeDocument("log.txt", "start\n")
 await db.writeDocument("log.txt", "done")
 const result = await db.loadDocument("log.txt")
 console.info(result) // ← "start\ndone"
-
 ```
 ### `dropDocument(uri)`
 
@@ -200,15 +186,12 @@ How to test dropDocument API?
 import DBFS from "@nan0web/db-fs"
 const db = new DBFS({ root: "__test_drop_api__" })
 await db.connect()
-
 await db.saveDocument("temp.txt", "Delete me")
 const existsBefore = await db.loadDocument("temp.txt")
 console.info(existsBefore) // ← "Delete me"
-
 await db.dropDocument("temp.txt")
 const missingAfter = await db.loadDocument("temp.txt", null)
 console.info(missingAfter) // ← null
-
 ```
 ## Java•Script
 

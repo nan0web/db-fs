@@ -1,5 +1,5 @@
 import DB, { DocumentStat, DocumentEntry } from "@nan0web/db"
-import FS from "./FS.js"
+import FS from "./FSAdapter.js"
 
 class DBFS extends DB {
 	static FS = FS
@@ -102,9 +102,14 @@ class DBFS extends DB {
 			return this.data.has(file) ? this.data.get(file) : defaultValue
 		}
 		for (const loader of this.loaders) {
-			const res = loader(path, null, ext)
-			if (false !== res) {
-				return res
+			try {
+				const res = loader(path, null, ext)
+				if (false !== res) {
+					return res
+				}
+			} catch (/** @type {any} */ err) {
+				this.console.error(["Could not load", path].join(": "))
+				this.console.error(err.stack ?? err.message)
 			}
 		}
 		return false
@@ -116,7 +121,7 @@ class DBFS extends DB {
 	 */
 	async _buildPath(uri) {
 		const dir = await this.resolve(uri, "..")
-		const path = this.FS.resolve(this.cwd, this.root, dir)
+		const path = this.location(dir)
 		this.FS.mkdirSync(path, { recursive: true })
 	}
 	/**
@@ -263,6 +268,48 @@ class DBFS extends DB {
 		})
 		files.sort((a, b) => Number(b.stat.isDirectory) - Number(a.stat.isDirectory))
 		return files
+	}
+
+	/**
+	 * Computes absolute URI for the path segments.
+	 * @param {...string} args - Path segments
+	 * @returns {string} Absolute URI
+	 */
+	absolute(...args) {
+		// Check if any argument is already an absolute URI
+		const isAbsoluteURI = args.some(arg => arg.startsWith("/"))
+
+		if (isAbsoluteURI) {
+			// Find the absolute URI argument and return it unchanged
+			const absoluteArg = args.find(arg => arg.startsWith("/"))
+			return absoluteArg || "/"
+		}
+
+		// Return absolute filesystem path
+		const resolved = this.resolveSync(...args)
+		const root = this.root.startsWith("/") ? this.root.slice(1) : this.root
+		return this.FS.resolve(this.cwd, root, resolved)
+	}
+
+	/**
+	 * Computes relative URI for the given path.
+	 * @param {string} from - Base path
+	 * @param {string} [to=from] - Target path (defaults to this.root)
+	 * @returns {string} Relative URI
+	 */
+	relative(from, to) {
+		// If both paths are absolute filesystem paths, compute relative path
+		if (from.startsWith("/") && to?.startsWith("/")) {
+			if (!to.endsWith("/")) to += "/"
+			return from.startsWith(to) ? from.substring(to.length) : from
+		}
+
+		// Default to root if to is not provided
+		if (to === undefined) {
+			return this.FS.relative(this.root, from)
+		}
+
+		return to
 	}
 
 	/**

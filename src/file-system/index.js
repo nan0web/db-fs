@@ -22,7 +22,7 @@ function load(file, opts = {}) {
 		format = ext,
 		delimiter = ".tsv" === ext ? "\t"
 			: ".csv" === ext ? ","
-			: ".txt" === ext ? "\n"
+			: ".txt" === ext ? ""
 			: ".jsonl" === ext ? "\n"
 			: "|",
 		quote = '"',
@@ -60,7 +60,7 @@ function load(file, opts = {}) {
  */
 function save(file, data, ...args) {
 	const ext = extname(file)
-	if (['yaml', 'yml'].includes(ext)) {
+	if (['.yaml', '.yml'].includes(ext)) {
 		return saveYAML(file, data)
 	}
 	// if (['nano'].includes(ext)) {
@@ -70,9 +70,8 @@ function save(file, data, ...args) {
 		return saveJSON(file, data, args[0] ?? null, args[1] ?? 2)
 	}
 	if (['.jsonl'].includes(ext)) {
-		const text = Array.from(data).map(el => JSON.stringify(el))
-		const delimiter = args[0] || "\n"
-		return saveTXT(file, text, delimiter)
+		const lines = Array.from(data).map(el => JSON.stringify(el) + "\n")
+		return saveTXT(file, lines.join(""))
 	}
 	if (['.csv'].includes(ext)) {
 		return saveCSV(file, data, args[0] ?? ",", args[1] ?? '"', args[2] ?? "\n")

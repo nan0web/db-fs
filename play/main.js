@@ -5,11 +5,26 @@ import Logger from "@nan0web/log"
 import { select } from "@nan0web/ui-cli"
 import DBFS from "../src/index.js"
 
+/**
+ * Logger instance with info level.
+ */
 const console = new Logger({ level: "info" })
+const format = new Intl.NumberFormat("en-US").format
 
 console.clear()
-console.info(Logger.style(Logger.LOGO, { color: "cyan" }))
+console.info(Logger.style(Logger.LOGO, { color: Logger.MAGENTA }))
 
+// Sequence of demo choices for non‑interactive runs, e.g., "2,4".
+// Values are 1‑based indices matching the menu order.
+const demoSequence = process.env.PLAY_DEMO_SEQUENCE?.split(',').map(s => Number(s.trim())) ?? []
+let demoCursor = 0
+
+/**
+ * Prompt the user to select a demo.
+ * If a predefined sequence exists (via PLAY_DEMO_SEQUENCE), it is used automatically.
+ *
+ * @returns {Promise<string>} The selected demo value.
+ */
 async function chooseDemo() {
 	const demos = [
 		{ name: "Basic Operations", value: "basic" },
@@ -17,6 +32,16 @@ async function chooseDemo() {
 		{ name: "File Formats", value: "formats" },
 		{ name: "← Exit", value: "exit" }
 	]
+
+	// Use predefined answer when available
+	if (demoCursor < demoSequence.length) {
+		const idx = demoSequence[demoCursor++] - 1 // convert to zero‑based
+		const menuValues = demos.map(el => el.value)
+		if (menuValues[idx]) {
+			return menuValues[idx]
+		}
+		throw new Error(`Incorrect PLAY_DEMO_SEQUENCE ${demoSequence[demoCursor]}, max: ${menuValues.length}`)
+	}
 
 	const choice = await select({
 		title: "Select DBFS demo to run:",
@@ -29,11 +54,14 @@ async function chooseDemo() {
 	return demos[choice.index].value
 }
 
+/**
+ * Run the basic operations demo.
+ */
 async function runBasicDemo() {
 	console.clear()
 	console.success("Basic DBFS Operations Demo")
 
-	const db = new DBFS({ root: "__playground_db__" })
+	const db = new DBFS({ root: "play/db/basic" })
 	await db.connect()
 
 	try {
@@ -58,6 +86,8 @@ async function runBasicDemo() {
 		// Drop
 		await db.dropDocument("users/alice.json")
 		console.info("✓ Dropped user document")
+		await db.dropDocument("logs/demo.txt")
+		console.info("✓ Dropped logs")
 
 	} catch (err) {
 		console.error("Error:", err.message)
@@ -66,6 +96,9 @@ async function runBasicDemo() {
 	}
 }
 
+/**
+ * Run the directory scanning demo.
+ */
 async function runScanDemo() {
 	console.clear()
 	console.success("Directory Scanning Demo")
@@ -73,15 +106,11 @@ async function runScanDemo() {
 	const db = new DBFS({ root: "." })
 	await db.connect()
 
-	console.info("Scanning current directory (limit 5):")
-	let count = 0
+	console.info("Scanning play/ directory:")
 
 	try {
-		for await (const entry of db.findStream(".", { limit: 5, sort: "name", order: "asc" })) {
-			if (count < 5) {
-				console.info(`${entry.file.name} (${entry.file.stat.isDirectory ? "dir" : "file"})`)
-				count++
-			}
+		for await (const entry of db.findStream("play", { sort: "name", order: "asc" })) {
+			console.info(`- ${entry.file.path} (${format(entry.file.stat.size)} bytes)`)
 		}
 	} catch (err) {
 		console.error("Error scanning directory:", err.message)
@@ -90,11 +119,14 @@ async function runScanDemo() {
 	await db.disconnect()
 }
 
+/**
+ * Run the file format handling demo.
+ */
 async function runFormatsDemo() {
 	console.clear()
 	console.success("File Format Handling Demo")
 
-	const db = new DBFS({ root: "__playground_formats__" })
+	const db = new DBFS({ root: "play/db/formats" })
 	await db.connect()
 
 	try {
@@ -118,6 +150,9 @@ async function runFormatsDemo() {
 		const guide = await db.loadDocument("guide.txt")
 		console.info("Loaded TXT:", guide.split("\n").join(" | "))
 
+		await db.dropDocument("config.json")
+		await db.dropDocument("guide.txt")
+
 	} catch (err) {
 		console.error("Error:", err.message)
 	} finally {
@@ -125,12 +160,18 @@ async function runFormatsDemo() {
 	}
 }
 
+/**
+ * Display a visual separation after demo completion.
+ */
 async function showMenu() {
 	console.info("\n" + "=".repeat(50))
 	console.info("Demo completed. Returning to menu...")
 	console.info("=".repeat(50) + "\n")
 }
 
+/**
+ * Main loop handling demo selection.
+ */
 async function main() {
 	while (true) {
 		try {

@@ -6,7 +6,7 @@
  * @returns {*} Parsed JSON content.
  * @throws {Error} If parsing fails and softError is false.
  */
-export function loadJSON(file: string, softError?: boolean): any;
+export function loadJSON(file: string, softError?: boolean | undefined): any;
 /**
  * Saves data as JSON file.
  * @function
@@ -16,7 +16,7 @@ export function loadJSON(file: string, softError?: boolean): any;
  * @param {string | number} [space=0] - JSON.stringify space.
  * @returns {string} Stringified JSON.
  */
-export function saveJSON(file: string, data: any, replacer?: (number | string)[] | null, space?: string | number): string;
+export function saveJSON(file: string, data: any, replacer?: (string | number)[] | null | undefined, space?: string | number | undefined): string;
 /**
  * Converts value to JSON string.
  * @function
@@ -25,7 +25,7 @@ export function saveJSON(file: string, data: any, replacer?: (number | string)[]
  * @param {string | number} [space=0] - JSON.stringify space.
  * @returns {string} JSON string.
 */
-export function toJSON(data: any, replacer?: (number | string)[] | null, space?: string | number): string;
+export function toJSON(data: any, replacer?: (string | number)[] | null | undefined, space?: string | number | undefined): string;
 /**
  * Parses JSON string.
  * @function

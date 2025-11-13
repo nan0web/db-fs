@@ -117,4 +117,16 @@ suite("CSV Tests", () => {
 		]
 		assert.deepStrictEqual(result, expected)
 	})
+
+	it("should parse as a string if starts with a number", () => {
+		const content = [
+			"tel,mail",
+			"96545454,54@example.com",
+		].join("\n")
+		const result = parseCSV(content)
+		assert.deepStrictEqual(result, [
+			["tel", "mail"],
+			[96545454, "54@example.com"]
+		])
+	})
 })

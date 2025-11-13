@@ -6,7 +6,7 @@
  * @returns {*} Parsed YAML content.
  * @throws {Error} If parsing fails and softError is false.
  */
-export function loadYAML(file: string, softError?: boolean): any;
+export function loadYAML(file: string, softError?: boolean | undefined): any;
 /**
  * Saves data as YAML file.
  * @function

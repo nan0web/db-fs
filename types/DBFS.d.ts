@@ -48,6 +48,22 @@ declare class DBFS extends DB {
      */
     location(...args: any[]): string;
     /**
+     * Returns the stat of the document without meta (cache) check.
+     * ```
+     * NO ACCESS CHECK!
+     * ```
+     * @param {string} uri The URI to stat the document from.
+     * @returns {Promise<DocumentStat>} The document stat.
+     */
+    statDocument(uri: string): Promise<DocumentStat>;
+    /**
+     * Loads a document from the given URI.
+     * @param {string} uri The URI to load the document from.
+     * @param {any} defaultValue The default value to return if the document does not exist.
+     * @returns {Promise<any>} The loaded document or the default value.
+     */
+    loadDocument(uri: string, defaultValue?: any): Promise<any>;
+    /**
      * Loads a document using a specific extension handler.
      * @param {string} ext The extension of the document.
      * @param {string} uri The URI to load the document from.
@@ -62,6 +78,29 @@ declare class DBFS extends DB {
      */
     _buildPath(uri: string): Promise<void>;
     /**
+     * Saves a document to the given URI.
+     * @throws {Error} If the document cannot be saved.
+     * @param {string} uri The URI to save the document to.
+     * @param {any} document The document to save.
+     * @returns {Promise<boolean>} True if saved successfully, false otherwise.
+     */
+    saveDocument(uri: string, document: any): Promise<boolean>;
+    /**
+     * Appends a chunk of data to a document at the given URI.
+     * @throws {Error} If the document cannot be written.
+     * @param {string} uri The URI to write the document to.
+     * @param {string} chunk The chunk to write.
+     * @returns {Promise<boolean>} True if written successfully, false otherwise.
+     */
+    writeDocument(uri: string, chunk: string): Promise<boolean>;
+    /**
+     * Deletes a document at the given URI.
+     * @throws {Error} If the document cannot be dropped.
+     * @param {string} uri The URI(s) of the document(s) to drop.
+     * @returns {Promise<boolean>} True if dropped successfully, false otherwise.
+     */
+    dropDocument(uri: string): Promise<boolean>;
+    /**
      * Deletes a document or documents at the given URI(s).
      * @throws {Error} If the document cannot be dropped.
      * @param {string | string[]} uri The URI(s) of the document(s) to drop.
@@ -74,7 +113,7 @@ declare class DBFS extends DB {
      * @param {"r"|"w"|"d"} [level="r"] The access level: read, write, or delete.
      * @returns {Promise<void>} True if access is granted.
      */
-    ensureAccess(uri: string, level?: "r" | "w" | "d"): Promise<void>;
+    ensureAccess(uri: string, level?: "r" | "w" | "d" | undefined): Promise<void>;
     /**
      * Lists the contents of a directory.
      * @param {string} uri The directory URI to list.
@@ -87,6 +126,6 @@ declare class DBFS extends DB {
     }): Promise<DocumentEntry[]>;
 }
 import DB from "@nan0web/db";
-import FS from "./FS.js";
-import { DocumentEntry } from "@nan0web/db";
+import FS from "./FSAdapter.js";
 import { DocumentStat } from "@nan0web/db";
+import { DocumentEntry } from "@nan0web/db";

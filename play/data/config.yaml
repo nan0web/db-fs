@@ -1,0 +1,9 @@
+|-
+app:
+  name: DBFS Playground
+  version: 1.0
+  features:
+    - save
+    - load
+    - scan
+    - formats

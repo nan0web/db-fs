@@ -19,11 +19,11 @@ function loadCSV(filePath, delimiter = ',', quote = '"', softError = false) {
 	try {
 		const content = readFileSync(filePath, { encoding: 'utf-8' })
 		const all = parseCSV(content, delimiter, quote)
-		const cols = all[0]; // Column headers
-		const rows = all.slice(1); // Data rows
+		const cols = all[0] // Column headers
+		const rows = all.slice(1) // Data rows
 		return rows.map(row => {
 			const result = {}
-			row.forEach((value, i) => result[cols[i]] = decodeValue(value)); // Ensure values are decoded
+			row.forEach((value, i) => result[cols[i]] = decodeValue(value)) // Ensure values are decoded
 			return result
 		})
 	} catch (err) {
@@ -40,8 +40,12 @@ function loadCSV(filePath, delimiter = ',', quote = '"', softError = false) {
  */
 function decodeValue(value) {
 	value = `${value}`.trim()
+	// If value is empty, return as string
+	if (value === '') {
+		return value
+	}
 	// Check if the trimmed value is a number
-	if (!isNaN(parseFloat(value)) && value !== '') {
+	if (!isNaN(parseFloat(value)) && isFinite(Number(value))) {
 		return Number(value)
 	}
 	return value
@@ -69,20 +73,20 @@ function parseCSV(content, delimiter = ',', quote = '"') {
 			if (inQuotes && content[i + 1] === quote) {
 				// Escaped quote inside quoted field
 				currentValue += quote
-				++i; // Skip next quote
+				++i // Skip next quote
 			} else {
 				inQuotes = !inQuotes
 			}
 		} else if (currentChar === delimiter && !inQuotes) {
 			// End of a value
-			currentRow.push(decodeValue(currentValue)); // Decode value
+			currentRow.push(decodeValue(currentValue)) // Decode value
 			currentValue = ''
 		} else if ((currentChar === '\n' || (currentChar === '\r' && content[i + 1] === '\n')) && !inQuotes) {
 			// End of a row
 			if (currentChar === '\r' && content[i + 1] === '\n') {
-				++i; // Skip the \n part of \r\n
+				++i // Skip the \n part of \r\n
 			}
-			currentRow.push(decodeValue(currentValue)); // Decode value
+			currentRow.push(decodeValue(currentValue)) // Decode value
 			rows.push(currentRow)
 			currentRow = []
 			currentValue = ''
@@ -92,7 +96,7 @@ function parseCSV(content, delimiter = ',', quote = '"') {
 	}
 
 	// Push the last value and row if there are any remaining
-	if (currentValue) {
+	if (currentValue || content.endsWith('\n') || content.endsWith('\r')) {
 		currentRow.push(decodeValue(currentValue))
 	}
 	if (currentRow.length > 0) {
@@ -106,7 +110,7 @@ function parseCSV(content, delimiter = ',', quote = '"') {
  * Saves data as CSV file.
  * @function
  * @param {string} filePath - Path to save CSV.
- * @param {Object[]} data - Array of objects to save.
+ * @param {Object[] | string} data - Array of objects to save.
  * @param {string} [delimiter=','] - Field delimiter.
  * @param {string} [quote='"'] - Quote character.
  * @param {string} [eol='\n'] - End of line character.
@@ -121,15 +125,20 @@ function saveCSV(filePath, data, delimiter = ',', quote = '"', eol = '\n') {
 		return cell
 	}
 
-	const csv = []
-	data.forEach((row, i) => {
-		if (0 === i) {
-			csv.push(Object.keys(row).map(escapeCell).join(delimiter))
-		}
-		csv.push(Object.values(row).map(escapeCell).join(delimiter))
-	})
+	let text = ""
+	if ("string" === typeof data) {
+		text = data
+	} else {
+		const csv = []
+		data.forEach((row, i) => {
+			if (0 === i) {
+				csv.push(Object.keys(row).map(escapeCell).join(delimiter))
+			}
+			csv.push(Object.values(row).map(escapeCell).join(delimiter))
+		})
 
-	const text = csv.join(eol)
+		text = csv.join(eol)
+	}
 	writeFileSync(filePath, text, 'utf8')
 	return text
 }

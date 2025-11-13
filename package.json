@@ -5,9 +5,17 @@
 	"main": "src/index.js",
 	"types": "types/index.d.ts",
 	"type": "module",
+	"files": [
+		"src/**/*.js",
+		"!src/**/*.test.js",
+		"types/**/*.d.ts"
+	],
 	"scripts": {
 		"build": "tsc",
-		"test": "node --test",
+		"test": "node --test \"src/**/*.js\"",
+		"test:nan0test": "node --test \"src/**/*.test.js\" | nan0test parse --fail",
+		"test:play": "node --test \"play/**/*.test.js\"",
+		"test:all": "npm run test && npm run test:play && npm run test:docs && npm run test:status",
 		"clean": "rm -rf .cache/ && rm -rf dist/",
 		"clean:modules": "rm -rf node_modules",
 		"test:docs": "node --test src/README.md.js",
@@ -18,7 +26,7 @@
 		"precommit": "npm test",
 		"prepush": "npm test",
 		"prepare": "husky",
-		"playground": "node playground/main.js",
+		"play": "node play/main.js",
 		"release": "nan0release publish"
 	},
 	"keywords": [
@@ -31,19 +39,16 @@
 	"packageManager": "pnpm@10.11.0",
 	"devDependencies": {
 		"@nan0web/db": "workspace:*",
-		"@nan0web/types": "workspace:*",
-		"@nan0web/test": "workspace:*",
-		"husky": "^9.1.7",
-		"@nan0web/release": "workspace:*"
+		"@nan0web/event": "1.0.0",
+		"@nan0web/release": "1.0.1",
+		"@nan0web/test": "1.0.2",
+		"@nan0web/types": "1.0.3",
+		"@nan0web/ui-cli": "^1.0.1",
+		"husky": "^9.1.7"
 	},
 	"peerDependencies": {
-		"@nan0web/db": "^1.0.0",
+		"@nan0web/db": "^1.1.2",
+		"@nan0web/event": "^1.0.0",
 		"@nan0web/types": "^1.0.0"
-	},
-	"files": [
-		"src/",
-		"types/",
-		"package.json",
-		"README.md"
-	]
+	}
 }

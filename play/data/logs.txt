@@ -1,0 +1,4 @@
+Initial log entry at startup.
+Demo operations will append here.
+---
+End of initial log.

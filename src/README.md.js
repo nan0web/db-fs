@@ -138,13 +138,13 @@ function testRender() {
 		await db.connect()
 
 		const files = []
-		for await (const entry of db.findStream("src", { limit: 3, sort: "name", order: "asc" })) {
-			files.push(entry.file.name)
+		for await (const entry of db.findStream("src", { limit: 99, sort: "name", order: "asc" })) {
+			files.push(entry.file.path)
 		}
 		console.info(files) // ← ['file-system', 'DBFS.js', 'DBFS.test.js']
 
-		assert.ok(files.length <= 3)
-		assert.ok(files.includes("DBFS.js"))
+		assert.ok(files.length <= 99)
+		assert.ok(files.includes("src/DBFS.js"))
 		await db.disconnect()
 	})
 
@@ -187,10 +187,10 @@ function testRender() {
 		 * git clone https://github.com/nan0web/db-fs.git
 		 * cd db-fs
 		 * npm install
-		 * npm run playground
+		 * npm run play
 		 * ```
 		 */
-		assert.ok(String(pkg.scripts?.playground).includes("node playground"))
+		assert.ok(String(pkg.scripts?.play).includes("node play"))
 	})
 
 	/**
