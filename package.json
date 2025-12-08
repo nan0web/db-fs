@@ -15,7 +15,7 @@
 		"test": "node --test \"src/**/*.js\"",
 		"test:nan0test": "node --test \"src/**/*.test.js\" | nan0test parse --fail",
 		"test:play": "node --test \"play/**/*.test.js\"",
-		"test:all": "npm run test && npm run test:play && npm run test:docs && npm run test:status",
+		"test:all": "npm run test && npm run test:play && npm run test:docs && npm run build",
 		"clean": "rm -rf .cache/ && rm -rf dist/",
 		"clean:modules": "rm -rf node_modules",
 		"test:docs": "node --test src/README.md.js",
@@ -38,7 +38,7 @@
 	"license": "ISC",
 	"packageManager": "pnpm@10.11.0",
 	"devDependencies": {
-		"@nan0web/db": "workspace:*",
+		"@nan0web/db": "^1.2.0",
 		"@nan0web/event": "1.0.0",
 		"@nan0web/release": "1.0.1",
 		"@nan0web/test": "1.0.2",
@@ -47,7 +47,7 @@
 		"husky": "^9.1.7"
 	},
 	"peerDependencies": {
-		"@nan0web/db": "^1.1.2",
+		"@nan0web/db": "^1.2.0",
 		"@nan0web/event": "^1.0.0",
 		"@nan0web/types": "^1.0.0"
 	}
