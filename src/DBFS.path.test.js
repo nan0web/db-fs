@@ -50,6 +50,13 @@ describe("DBFS path tests", () => {
 		assert.strictEqual(absoluteLocation, pathResolve(db.cwd, db.root, "absolute/file.txt"))
 	})
 
+	it("should resolce correct location", () => {
+		const cwd = "/Users/i/src/nan.web/dist/audit/packages/auth-browser"
+		const fs = new DBFS({ cwd })
+		const file = fs.location(".")
+		assert.equal(file, cwd)
+	})
+
 	it("should compute absolute URIs correctly for relative input", () => {
 		const abs = db.absolute("index.js")
 		const expected = pathResolve(db.root, "index.js")

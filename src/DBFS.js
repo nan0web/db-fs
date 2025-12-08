@@ -46,8 +46,12 @@ class DBFS extends DB {
 	 * @returns {string} Absolute location on the drive.
 	 */
 	location(...args) {
-		const abs = super.absolute(...args)
-		return this.FS.resolve(this.cwd, abs.startsWith("/") ? abs.slice(1) : abs)
+		let abs = super.absolute(...args)
+		if (abs.startsWith(this.cwd)) {
+			return abs
+		}
+		if (abs.startsWith("/")) abs = abs.slice(1)
+		return this.FS.resolve(this.cwd, abs)
 	}
 
 	/**
