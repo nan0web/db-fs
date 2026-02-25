@@ -1,4 +1,4 @@
-import fs from "node:fs"
+import fs from 'node:fs'
 
 /**
  * Loads and parses JSON file.
@@ -28,8 +28,11 @@ function loadJSON(file, softError = false) {
  * @returns {string} Stringified JSON.
  */
 function saveJSON(file, data, replacer = null, space = 0) {
-	if ("string" === typeof data) {
-		if (data.startsWith("{") && data.endsWith("}") || data.startsWith("[") && data.endsWith("]")) {
+	if ('string' === typeof data) {
+		if (
+			(data.startsWith('{') && data.endsWith('}')) ||
+			(data.startsWith('[') && data.endsWith(']'))
+		) {
 			try {
 				data = JSON.parse(data)
 			} catch {
@@ -60,7 +63,7 @@ function fromJSON(content) {
  * @param {(number | string)[] | null} [replacer=null] - JSON.stringify replacer.
  * @param {string | number} [space=0] - JSON.stringify space.
  * @returns {string} JSON string.
-*/
+ */
 function toJSON(data, replacer = null, space = 0) {
 	return JSON.stringify(data, replacer, space)
 }

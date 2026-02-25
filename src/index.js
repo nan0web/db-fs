@@ -1,6 +1,6 @@
-import DB, { DocumentStat, DocumentEntry } from "@nan0web/db"
-import DBFS from "./DBFS.js"
-import FSDriver from "./FSDriver.js"
+import DB, { DocumentStat, DocumentEntry } from '@nan0web/db'
+import DBFS from './DBFS.js'
+import FSDriver from './FSDriver.js'
 
 /**
  * @module DBFS
@@ -11,12 +11,19 @@ export {
 	DBFS,
 	DocumentEntry,
 	DocumentStat,
-	FSDriver
+	FSDriver,
 }
 
 export {
-	load, save, loadCSV, saveCSV, loadJSON, saveJSON, loadTXT, saveTXT
-} from "./file-system/index.js"
+	load,
+	save,
+	loadCSV,
+	saveCSV,
+	loadJSON,
+	saveJSON,
+	loadTXT,
+	saveTXT,
+} from './file-system/index.js'
 
 export class DBwithFSDriver extends DB {
 	static Driver = FSDriver

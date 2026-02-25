@@ -1,9 +1,10 @@
-import { extname } from "node:path"
-import fs from "node:fs"
-import { loadJSON, saveJSON } from "./json.js"
-import { loadCSV, saveCSV } from "./csv.js"
-import { loadTXT, saveTXT } from "./txt.js"
-import { loadYAML, saveYAML } from "./yaml.js"
+import { extname } from 'node:path'
+import fs from 'node:fs'
+import { loadJSON, saveJSON } from './json.js'
+import { loadCSV, saveCSV } from './csv.js'
+import { loadTXT, saveTXT } from './txt.js'
+import { loadYAML, saveYAML } from './yaml.js'
+import { loadMD, saveMD } from './md.js'
 
 /**
  * Loads file content based on extension.
@@ -20,20 +21,26 @@ function load(file, opts = {}) {
 	const ext = extname(file)
 	const {
 		format = ext,
-		delimiter = ".tsv" === ext ? "\t"
-			: ".csv" === ext ? ","
-			: ".txt" === ext ? ""
-			: ".jsonl" === ext ? "\n"
-			: "|",
+		delimiter = '.tsv' === ext
+			? '\t'
+			: '.csv' === ext
+				? ','
+				: '.txt' === ext
+					? ''
+					: '.jsonl' === ext
+						? '\n'
+						: '|',
 		quote = '"',
 		softError = false,
 	} = opts
-	if ([".json"].includes(format)) {
+	if (['.json'].includes(format)) {
 		return loadJSON(file, softError)
 	}
-	if ([".jsonl"].includes(format)) {
+	if (['.jsonl'].includes(format)) {
 		const rows = loadTXT(file, delimiter, softError)
-		return Array.from(rows).filter(Boolean).map(r => JSON.parse(r))
+		return Array.from(rows)
+			.filter(Boolean)
+			.map((r) => JSON.parse(r))
 	}
 	if (['.yaml', '.yml'].includes(ext)) {
 		return loadYAML(file, softError)
@@ -41,11 +48,14 @@ function load(file, opts = {}) {
 	// if (['nano'].includes(ext)) {
 	// 	return loadNANO(file, softError)
 	// }
-	if ([".csv", ".tsv"].includes(format)) {
+	if (['.csv', '.tsv'].includes(format)) {
 		return loadCSV(file, delimiter, quote, softError)
 	}
 	if (['.txt'].includes(ext)) {
 		return loadTXT(file, delimiter, softError)
+	}
+	if (['.md'].includes(ext)) {
+		return loadMD(file, softError)
 	}
 	return fs.readFileSync(file, 'utf8')
 }
@@ -70,19 +80,22 @@ function save(file, data, ...args) {
 		return saveJSON(file, data, args[0] ?? null, args[1] ?? 2)
 	}
 	if (['.jsonl'].includes(ext)) {
-		const lines = Array.from(data).map(el => JSON.stringify(el) + "\n")
-		return saveTXT(file, lines.join(""))
+		const lines = Array.from(data).map((el) => JSON.stringify(el) + '\n')
+		return saveTXT(file, lines.join(''))
 	}
 	if (['.csv'].includes(ext)) {
-		return saveCSV(file, data, args[0] ?? ",", args[1] ?? '"', args[2] ?? "\n")
+		return saveCSV(file, data, args[0] ?? ',', args[1] ?? '"', args[2] ?? '\n')
 	}
 	if (['.tsv'].includes(ext)) {
-		return saveCSV(file, data, args[0] ?? "\t", args[1] ?? '"', args[2] ?? "\n")
+		return saveCSV(file, data, args[0] ?? '\t', args[1] ?? '"', args[2] ?? '\n')
 	}
 	if (['.txt'].includes(ext)) {
 		return saveTXT(file, data, ...args)
 	}
-	if ("string" === typeof data) {
+	if (['.md'].includes(ext)) {
+		return saveMD(file, data)
+	}
+	if ('string' === typeof data) {
 		fs.writeFileSync(file, data, 'utf8')
 		return data
 	}
@@ -91,9 +104,16 @@ function save(file, data, ...args) {
 }
 
 export {
-	save, load,
-	saveCSV, loadCSV,
-	saveJSON, loadJSON,
-	saveTXT, loadTXT,
-	saveYAML, loadYAML
+	save,
+	load,
+	saveCSV,
+	loadCSV,
+	saveJSON,
+	loadJSON,
+	saveTXT,
+	loadTXT,
+	saveYAML,
+	loadYAML,
+	loadMD,
+	saveMD,
 }

@@ -3,7 +3,7 @@ import { constants } from 'node:fs'
 import { AuthContext, DBDriverProtocol, DocumentStat } from '@nan0web/db'
 import { mkdir, unlink, stat, appendFile, readdir, access } from 'node:fs/promises'
 import { dirname, extname, resolve } from 'node:path'
-import { load, save } from "./file-system/index.js"
+import { load, save } from './file-system/index.js'
 
 /**
  * File System Driver for Node.js environments.
@@ -33,7 +33,7 @@ export default class FSDriver extends DBDriverProtocol {
 	 * @returns {Promise<boolean | void>} - TRUE if allowed, FALSE if denied, undefined if not realized.
 	 * @throws {Error} - Access denied (e.g., no write permission)
 	 */
-	async access(absoluteURI, level = "r", context = new AuthContext()) {
+	async access(absoluteURI, level = 'r', context = new AuthContext()) {
 		try {
 			switch (level) {
 				case 'r':
@@ -190,7 +190,7 @@ export default class FSDriver extends DBDriverProtocol {
 	async listDir(absoluteURI) {
 		try {
 			const entries = await readdir(absoluteURI, { withFileTypes: true })
-			return entries.map(entry => entry.name)
+			return entries.map((entry) => entry.name)
 		} catch {
 			if (this.driver) {
 				return await this.driver.listDir(absoluteURI)

@@ -1,0 +1,16 @@
+{
+	"entry": ["src/index.js"],
+	"project": ["src/**/*.js", "!src/**/*.test.js"],
+	"ignore": ["play/**", "releases/**", "types/**", "src/README.md.js", "bin/**", "src/FS.js"],
+	"ignoreDependencies": [
+		"husky",
+		"@nan0web/test",
+		"@nan0web/release",
+		"@nan0web/ui-cli",
+		"@nan0web/event",
+		"@nan0web/types",
+		"@nan0web/log",
+		"yaml"
+	],
+	"ignoreExportsUsedInFile": true
+}

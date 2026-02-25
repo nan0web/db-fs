@@ -1,6 +1,6 @@
 {
 	"name": "@nan0web/db-fs",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"description": "Database provider for nan•web with node:fs",
 	"main": "src/index.js",
 	"types": "types/index.d.ts",
@@ -15,7 +15,9 @@
 		"test": "node --test \"src/**/*.js\"",
 		"test:nan0test": "node --test \"src/**/*.test.js\" | nan0test parse --fail",
 		"test:play": "node --test \"play/**/*.test.js\"",
-		"test:all": "npm run test && npm run test:play && npm run test:docs && npm run build",
+		"knip": "pnpm dlx knip --production",
+		"audit": "pnpm audit --prod || true",
+		"test:all": "npm run test && npm run test:play && npm run test:docs && npm run build && npm run knip && npm run audit",
 		"clean": "rm -rf .cache/ && rm -rf dist/",
 		"clean:modules": "rm -rf node_modules",
 		"test:docs": "node --test src/README.md.js",
@@ -38,7 +40,7 @@
 	"license": "ISC",
 	"packageManager": "pnpm@10.11.0",
 	"devDependencies": {
-		"@nan0web/db": "^1.2.0",
+		"@nan0web/db": "^1.3.0",
 		"@nan0web/event": "1.0.0",
 		"@nan0web/release": "1.0.1",
 		"@nan0web/test": "1.0.2",
@@ -47,8 +49,12 @@
 		"husky": "^9.1.7"
 	},
 	"peerDependencies": {
-		"@nan0web/db": "^1.2.0",
+		"@nan0web/db": "^1.3.0",
 		"@nan0web/event": "^1.0.0",
 		"@nan0web/types": "^1.0.0"
+	},
+	"dependencies": {
+		"@nan0web/log": "1.1.1",
+		"yaml": "^2.5.0"
 	}
 }

@@ -6,4 +6,4 @@ export default class TestDir {
     erase(): void;
     join(dir: any): string;
 }
-import DBFSBase from "./DBFS.js";
+import DBFSBase from './DBFS.js';

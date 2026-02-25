@@ -1,5 +1,5 @@
-import DB from "@nan0web/db"
-import FSDriver from "./FSDriver.js"
+import DB from '@nan0web/db'
+import FSDriver from './FSDriver.js'
 
 /**
  * File System Database extension of DB with FSDriver.

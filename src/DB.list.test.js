@@ -1,49 +1,46 @@
 import { suite, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { DocumentEntry } from "@nan0web/db"
+import { DocumentEntry } from '@nan0web/db'
 import TestDir, { DBFS } from './test.js'
 
-const testDir = new TestDir("db-list-test-js")
+const testDir = new TestDir('db-list-test-js')
 
 class DB extends DBFS {
 	accessLevels = []
 	async ensureAccess(uri, level = 'r') {
 		this.accessLevels.push({ uri, level })
 		if (!['r', 'w', 'd'].includes(level)) {
-			throw new TypeError([
-				"Access level must be one of [r, w, d]",
-				"r = read",
-				"w = write",
-				"d = delete",
-			].join("\n"))
+			throw new TypeError(
+				['Access level must be one of [r, w, d]', 'r = read', 'w = write', 'd = delete'].join('\n'),
+			)
 		}
 		return true
 	}
 }
 
-suite("DB", () => {
-	describe("listDir", () => {
+suite('DB', () => {
+	describe('listDir', () => {
 		it('should list directory contents correctly', async () => {
 			const db = new DB({
-				root: testDir.join("dist"),
+				root: testDir.join('dist'),
 				predefined: [
 					['dir1/file1.txt', 'content1'],
 					['dir1/file2.txt', 'content2'],
 					['dir2/index.json', '[]'],
 					['dir2/subdir/config.json', '{}'],
-					['other.txt', 'other']
-				]
+					['other.txt', 'other'],
+				],
 			})
 
 			await db.connect()
 			await db.dump(db)
 
-			const r1 = (await db.listDir('dir1')).map(entry => entry.path)
-			assert.deepStrictEqual(r1, ["dir1/file1.txt", "dir1/file2.txt"])
-			const r2 = (await db.listDir('.')).map(entry => entry.path)
-			assert.deepStrictEqual(r2, ["dir1", "dir2", "other.txt"])
-			const r3 = (await db.listDir('dir2')).map(entry => entry.path)
-			assert.deepStrictEqual(r3, ["dir2/subdir", "dir2/index.json"])
+			const r1 = (await db.listDir('dir1')).map((entry) => entry.path)
+			assert.deepStrictEqual(r1, ['dir1/file1.txt', 'dir1/file2.txt'])
+			const r2 = (await db.listDir('.')).map((entry) => entry.path)
+			assert.deepStrictEqual(r2, ['dir1', 'dir2', 'other.txt'])
+			const r3 = (await db.listDir('dir2')).map((entry) => entry.path)
+			assert.deepStrictEqual(r3, ['dir2/subdir', 'dir2/index.json'])
 
 			await db.disconnect()
 		})
@@ -66,11 +63,11 @@ suite("DB", () => {
 
 		it('should yield directory entries', async () => {
 			const db = new DB({
-				root: testDir.join("dist-entries"),
+				root: testDir.join('dist-entries'),
 				predefined: [
 					['file1.txt', 'content1'],
-					['file2.txt', 'content2']
-				]
+					['file2.txt', 'content2'],
+				],
 			})
 			await db.connect()
 			await db.dump(db)
@@ -89,12 +86,12 @@ suite("DB", () => {
 
 		it('should read recursively with depth > 0', async () => {
 			const db = new DB({
-				root: testDir.join("depth1"),
+				root: testDir.join('depth1'),
 				predefined: [
 					['dir1/file1.txt', 'content1'],
 					['dir1/dir2/file2.txt', 'content2'],
-					['dir1/dir2/dir3/file3.txt', 'content3']
-				]
+					['dir1/dir2/dir3/file3.txt', 'content3'],
+				],
 			})
 			await db.connect()
 			await db.dump(db)
@@ -105,23 +102,26 @@ suite("DB", () => {
 			}
 
 			assert.strictEqual(entries.length, 3)
-			assert.ok(entries.find(e => e.path === 'dir1/file1.txt'))
-			assert.ok(entries.find(e => e.path === 'dir1/dir2/file2.txt'))
-			assert.ok(entries.find(e => e.path === 'dir1/dir2/dir3/file3.txt'))
+			assert.ok(entries.find((e) => e.path === 'dir1/file1.txt'))
+			assert.ok(entries.find((e) => e.path === 'dir1/dir2/file2.txt'))
+			assert.ok(entries.find((e) => e.path === 'dir1/dir2/dir3/file3.txt'))
 
 			await db.disconnect()
 		})
 
 		it('should read index.txtl at depth 0', async () => {
 			const db = new DB({
-				root: testDir.join("depth0"),
+				root: testDir.join('depth0'),
 				predefined: [
-					['index.txtl', `columns: name, mtimeMs.36, size.36
+					[
+						'index.txtl',
+						`columns: name, mtimeMs.36, size.36
 long
 ---
 file.json h7v37t 2s
-dir/sub.json h7v37u 5k`]
-				]
+dir/sub.json h7v37u 5k`,
+					],
+				],
 			})
 			await db.connect()
 
@@ -131,18 +131,16 @@ dir/sub.json h7v37u 5k`]
 			}
 
 			assert.strictEqual(entries.length, 2)
-			assert.ok(entries.find(e => e.path === 'file.json'))
-			assert.ok(entries.find(e => e.path === 'dir/sub.json'))
+			assert.ok(entries.find((e) => e.path === 'file.json'))
+			assert.ok(entries.find((e) => e.path === 'dir/sub.json'))
 
 			await db.disconnect()
 		})
 
 		it('should read index.txt at depth 0', async () => {
 			const db = new DB({
-				root: testDir.join("index-txt"),
-				predefined: [
-					['index.txt', 'file1.txt mecxlwg9 8x\nfile2.txt mecvlwg9 8c']
-				]
+				root: testDir.join('index-txt'),
+				predefined: [['index.txt', 'file1.txt mecxlwg9 8x\nfile2.txt mecvlwg9 8c']],
 			})
 			await db.connect()
 
@@ -152,22 +150,22 @@ dir/sub.json h7v37u 5k`]
 			}
 
 			assert.strictEqual(entries.length, 2)
-			assert.ok(entries.find(e => e.path === 'file1.txt'))
-			assert.ok(entries.find(e => e.path === 'file2.txt'))
+			assert.ok(entries.find((e) => e.path === 'file1.txt'))
+			assert.ok(entries.find((e) => e.path === 'file2.txt'))
 
 			await db.disconnect()
 		})
 
 		it('should read with depth 1 to include subdirectories', async () => {
 			const db = new DB({
-				root: testDir.join("depth1-sub"),
+				root: testDir.join('depth1-sub'),
 				predefined: [
 					['dir1/index.txt', 'file1.txt mecxlwg9 8x\nfile2.txt mecvlwg9 8c\nsubdir/ mecvlwg9 0'],
 					['dir1/subdir/index.txt', 'nested.json mecxlwg9 8x'],
 					['dir1/file1.txt', 'content1'],
 					['dir1/file2.txt', 'content2'],
-					['dir1/subdir/nested.json', 'content3']
-				]
+					['dir1/subdir/nested.json', 'content3'],
+				],
 			})
 			await db.connect()
 
@@ -177,20 +175,20 @@ dir/sub.json h7v37u 5k`]
 			}
 
 			assert.ok(entries.length >= 3)
-			assert.ok(entries.find(e => e.path === 'dir1/file1.txt'))
-			assert.ok(entries.find(e => e.path === 'dir1/file2.txt'))
-			assert.ok(entries.find(e => e.path === 'dir1/subdir/nested.json'))
+			assert.ok(entries.find((e) => e.path === 'dir1/file1.txt'))
+			assert.ok(entries.find((e) => e.path === 'dir1/file2.txt'))
+			assert.ok(entries.find((e) => e.path === 'dir1/subdir/nested.json'))
 
 			await db.disconnect()
 		})
 
 		it('should read with skipStat option', async () => {
 			const db = new DB({
-				root: testDir.join("skip-stat"),
+				root: testDir.join('skip-stat'),
 				predefined: [
 					['file1.txt', 'content1'],
-					['file2.txt', 'content2']
-				]
+					['file2.txt', 'content2'],
+				],
 			})
 			await db.connect()
 			await db.dump(db)
@@ -201,20 +199,20 @@ dir/sub.json h7v37u 5k`]
 			}
 
 			assert.strictEqual(entries.length, 2)
-			assert.ok(entries.find(e => e.path === 'file1.txt'))
-			assert.ok(entries.find(e => e.path === 'file2.txt'))
+			assert.ok(entries.find((e) => e.path === 'file1.txt'))
+			assert.ok(entries.find((e) => e.path === 'file2.txt'))
 
 			await db.disconnect()
 		})
 
 		it('should respect filter function', async () => {
 			const db = new DB({
-				root: testDir.join("filter"),
+				root: testDir.join('filter'),
 				predefined: [
 					['file1.txt', 'content1'],
 					['file2.json', 'content2'],
-					['file3.md', 'content3']
-				]
+					['file3.md', 'content3'],
+				],
 			})
 			await db.connect()
 			await db.dump(db)
@@ -222,13 +220,13 @@ dir/sub.json h7v37u 5k`]
 			const entries = []
 			for await (const entry of db.readDir('.', {
 				depth: 0,
-				filter: (entry) => entry.path.endsWith('.txt')
+				filter: (entry) => entry.path.endsWith('.txt'),
 			})) {
 				entries.push(entry)
 			}
 
 			assert.strictEqual(entries.length, 1)
-			assert.ok(entries.find(e => e.path === 'file1.txt'))
+			assert.ok(entries.find((e) => e.path === 'file1.txt'))
 
 			await db.disconnect()
 		})
@@ -236,14 +234,17 @@ dir/sub.json h7v37u 5k`]
 		describe('readDir with depth logic', () => {
 			it('should load index.txtl when depth=0', async () => {
 				const db = new DB({
-					root: testDir.join("index-txtl"),
+					root: testDir.join('index-txtl'),
 					predefined: [
-						['index.txtl', `columns: name, mtimeMs.36, size.36
+						[
+							'index.txtl',
+							`columns: name, mtimeMs.36, size.36
 long
 ---
 file.json h7v37t 2s
-dir/sub.json h7v37u 5k`]
-					]
+dir/sub.json h7v37u 5k`,
+						],
+					],
 				})
 				await db.connect()
 
@@ -261,11 +262,11 @@ dir/sub.json h7v37u 5k`]
 
 			it('should load index.txt and go deeper when depth=1-3', async () => {
 				const db = new DB({
-					root: testDir.join("depth13"),
+					root: testDir.join('depth13'),
 					predefined: [
 						['index.txt', 'file.json mecxlwg9 8x\nsubdir/ mecvlwg9 0'],
-						['subdir/index.txt', 'nested.json mecxlwg9 8x']
-					]
+						['subdir/index.txt', 'nested.json mecxlwg9 8x'],
+					],
 				})
 				await db.connect()
 				await db.dump(db)
@@ -275,22 +276,20 @@ dir/sub.json h7v37u 5k`]
 					entries.push(entry.path)
 				}
 
-				assert.deepStrictEqual(entries, [
-					"file.json", "subdir/", "subdir/nested.json"
-				])
+				assert.deepStrictEqual(entries, ['file.json', 'subdir/', 'subdir/nested.json'])
 
 				await db.disconnect()
 			})
 
 			it('should read directory contents recursively without index files', async () => {
 				const db = new DB({
-					root: testDir.join("rec"),
+					root: testDir.join('rec'),
 					predefined: [
 						['dir1/file1.txt', 'content1'],
 						['dir1/dir2/file2.txt', 'content2'],
 						['dir1/dir2/dir3/file3.txt', 'content3'],
-						['other.txt', 'other']
-					]
+						['other.txt', 'other'],
+					],
 				})
 				await db.connect()
 				await db.dump(db)
@@ -301,9 +300,9 @@ dir/sub.json h7v37u 5k`]
 				}
 
 				assert.deepStrictEqual(entries, [
-					"dir1/dir2/dir3/file3.txt",
-					"dir1/dir2/file2.txt",
-					"dir1/file1.txt",
+					'dir1/dir2/dir3/file3.txt',
+					'dir1/dir2/file2.txt',
+					'dir1/file1.txt',
 				])
 
 				await db.disconnect()
@@ -311,34 +310,33 @@ dir/sub.json h7v37u 5k`]
 
 			it('should read directory contents flat (depth=0) without index files', async () => {
 				const db = new DB({
-					root: testDir.join("flat"),
+					root: testDir.join('flat'),
 					predefined: [
 						['file1.txt', 'content1'],
 						['dir/file2.txt', 'content2'],
-						['dir/subdir/file3.txt', 'content3']
-					]
+						['dir/subdir/file3.txt', 'content3'],
+					],
 				})
 				await db.connect()
 				await db.dump(db)
 
 				const entries = []
-				for await (const entry of db.readDir('dir', { depth: 0, includeDirs: true })) entries.push(entry.path)
+				for await (const entry of db.readDir('dir', { depth: 0, includeDirs: true }))
+					entries.push(entry.path)
 
-				assert.deepStrictEqual(entries, [
-					"dir/subdir", "dir/file2.txt",
-				])
+				assert.deepStrictEqual(entries, ['dir/subdir', 'dir/file2.txt'])
 
 				await db.disconnect()
 			})
 
 			it('should read directory contents limited by depth without index files', async () => {
 				const db = new DB({
-					root: testDir.join("without-index"),
+					root: testDir.join('without-index'),
 					predefined: [
 						['limited/file1.txt', 'content1'],
 						['limited/dir/file2.txt', 'content2'],
-						['limited/dir/subdir/file3.txt', 'content3']
-					]
+						['limited/dir/subdir/file3.txt', 'content3'],
+					],
 				})
 				await db.connect()
 				await db.dump(db)
@@ -348,10 +346,7 @@ dir/sub.json h7v37u 5k`]
 					entries.push(entry.path)
 				}
 
-				assert.deepStrictEqual(entries, [
-					"limited/dir/file2.txt",
-					"limited/file1.txt",
-				])
+				assert.deepStrictEqual(entries, ['limited/dir/file2.txt', 'limited/file1.txt'])
 
 				await db.disconnect()
 			})

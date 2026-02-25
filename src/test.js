@@ -1,6 +1,6 @@
-import { resolve, sep } from "node:path"
-import { rmdirSync, mkdirSync, existsSync } from "node:fs"
-import DBFSBase from "./DBFS.js"
+import { resolve, sep } from 'node:path'
+import { rmdirSync, rmSync, mkdirSync, existsSync } from 'node:fs'
+import DBFSBase from './DBFS.js'
 
 export class DBFS extends DBFSBase {
 	async disconnect() {
@@ -13,7 +13,7 @@ export class DBFS extends DBFSBase {
 			}
 			await this.dropDocument(uri)
 		}
-		const arr = Array.from(dirs).sort((a, b) => b.split("/").length - a.split("/").length)
+		const arr = Array.from(dirs).sort((a, b) => b.split('/').length - a.split('/').length)
 		for (const dir of arr) {
 			const path = this.location(dir)
 			if (existsSync(path)) rmdirSync(path)
@@ -23,12 +23,12 @@ export class DBFS extends DBFSBase {
 
 export default class TestDir {
 	constructor(root) {
-		this.root = "__test_fs__/" + root
+		this.root = '__test_fs__/' + root
 	}
 	erase() {
 		const resolvedDir = resolve(this.root)
 		if (existsSync(resolvedDir)) {
-			rmdirSync(resolvedDir, { recursive: true })
+			rmSync(resolvedDir, { recursive: true, force: true })
 		}
 		mkdirSync(resolvedDir, { recursive: true })
 	}

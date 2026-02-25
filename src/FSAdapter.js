@@ -1,6 +1,17 @@
-import { resolve, relative, sep, extname, dirname } from "node:path"
-import { appendFileSync, existsSync, mkdirSync, statSync, readdirSync, unlinkSync, rmdirSync, readFileSync, writeFileSync } from "node:fs"
-import { load, loadTXT, save } from "./file-system/index.js"
+import { resolve, relative, sep, extname, dirname } from 'node:path'
+import {
+	appendFileSync,
+	existsSync,
+	mkdirSync,
+	statSync,
+	readdirSync,
+	unlinkSync,
+	rmdirSync,
+	rmSync,
+	readFileSync,
+	writeFileSync,
+} from 'node:fs'
+import { load, loadTXT, save } from './file-system/index.js'
 
 /** @typedef {{ recursive?: boolean, mode?: number | string }} MakeDirectoryOptions */
 
@@ -88,6 +99,7 @@ export default class FS {
 	 * @returns {void}
 	 */
 	static rmdirSync(path, options) {
+		if (options?.recursive) return rmSync(path, { recursive: true, force: true })
 		return rmdirSync(path, options)
 	}
 

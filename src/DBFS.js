@@ -1,5 +1,5 @@
-import DB, { DocumentStat, DocumentEntry } from "@nan0web/db"
-import FS from "./FSAdapter.js"
+import DB, { DocumentStat, DocumentEntry } from '@nan0web/db'
+import FS from './FSAdapter.js'
 
 class DBFS extends DB {
 	static FS = FS
@@ -10,7 +10,7 @@ class DBFS extends DB {
 	 */
 	loaders = [
 		/** @param {string} file @param {any} data @param {string} ext */
-		(file, data, ext) => ".txt" === ext ? this.FS.loadTXT(file, "", true) : false,
+		(file, data, ext) => ('.txt' === ext ? this.FS.loadTXT(file, '', true) : false),
 		/** @param {string} file @param {any} data @param {string} ext */
 		(file, data, ext) => this.FS.load(file),
 	]
@@ -50,7 +50,7 @@ class DBFS extends DB {
 		if (abs.startsWith(this.cwd)) {
 			return abs
 		}
-		if (abs.startsWith("/")) abs = abs.slice(1)
+		if (abs.startsWith('/')) abs = abs.slice(1)
 		return this.FS.resolve(this.cwd, abs)
 	}
 
@@ -63,19 +63,19 @@ class DBFS extends DB {
 	 * @returns {Promise<DocumentStat>} The document stat.
 	 */
 	async statDocument(uri) {
-		this.console.debug("Getting document statistics", { uri })
+		this.console.debug('Getting document statistics', { uri })
 		const file = await this.resolve(uri)
 		const path = this.FS.resolve(this.cwd, this.root, file)
 		try {
 			if (!this.FS.existsSync(path)) {
 				return new DocumentStat({
-					error: new Error("Document not found")
+					error: new Error('Document not found'),
 				})
 			}
 			return DBFS.createDocumentStatFrom(this.FS.statSync(path))
 		} catch (/** @type {any} */ err) {
 			return new DocumentStat({
-				error: err
+				error: err,
 			})
 		}
 	}
@@ -85,8 +85,8 @@ class DBFS extends DB {
 	 * @param {any} defaultValue The default value to return if the document does not exist.
 	 * @returns {Promise<any>} The loaded document or the default value.
 	 */
-	async loadDocument(uri, defaultValue = "") {
-		this.console.debug("Loading document", { uri, defaultValue })
+	async loadDocument(uri, defaultValue = '') {
+		this.console.debug('Loading document', { uri, defaultValue })
 		const ext = this.extname(uri)
 		return await this.loadDocumentAs(ext, uri, defaultValue)
 	}
@@ -97,9 +97,9 @@ class DBFS extends DB {
 	 * @param {any} defaultValue The default value to return if the document does not exist.
 	 * @returns {Promise<any>} The loaded document or the default value.
 	 */
-	async loadDocumentAs(ext, uri, defaultValue = "") {
-		this.console.debug("Loading document as", { uri, ext, defaultValue })
-		await this.ensureAccess(uri, "r")
+	async loadDocumentAs(ext, uri, defaultValue = '') {
+		this.console.debug('Loading document as', { uri, ext, defaultValue })
+		await this.ensureAccess(uri, 'r')
 		const file = await this.resolve(uri)
 		const path = this.FS.resolve(this.cwd, this.root, file)
 		if (!this.FS.existsSync(path)) {
@@ -112,7 +112,7 @@ class DBFS extends DB {
 					return res
 				}
 			} catch (/** @type {any} */ err) {
-				this.console.error(["Could not load", path].join(": "))
+				this.console.error(['Could not load', path].join(': '))
 				this.console.error(err.stack ?? err.message)
 			}
 		}
@@ -124,7 +124,7 @@ class DBFS extends DB {
 	 * @returns {Promise<void>}
 	 */
 	async _buildPath(uri) {
-		const dir = await this.resolve(uri, "..")
+		const dir = await this.resolve(uri, '..')
 		const path = this.location(dir)
 		this.FS.mkdirSync(path, { recursive: true })
 	}
@@ -136,8 +136,8 @@ class DBFS extends DB {
 	 * @returns {Promise<boolean>} True if saved successfully, false otherwise.
 	 */
 	async saveDocument(uri, document) {
-		this.console.debug("Saving document", { uri, document })
-		await this.ensureAccess(uri, "w")
+		this.console.debug('Saving document', { uri, document })
+		await this.ensureAccess(uri, 'w')
 		await this._buildPath(uri)
 		const file = await this.resolve(uri)
 		const path = this.FS.resolve(this.cwd, this.root, file)
@@ -147,6 +147,7 @@ class DBFS extends DB {
 				const stat = await this.statDocument(uri)
 				this.meta.set(uri, stat)
 				this.data.set(uri, false)
+				this.emit('change', { uri, type: 'save', data: document })
 				return true
 			}
 		}
@@ -160,13 +161,13 @@ class DBFS extends DB {
 	 * @returns {Promise<boolean>} True if written successfully, false otherwise.
 	 */
 	async writeDocument(uri, chunk) {
-		this.console.debug("Writing document", { uri, chunk })
-		await this.ensureAccess(uri, "w")
+		this.console.debug('Writing document', { uri, chunk })
+		await this.ensureAccess(uri, 'w')
 		await this._buildPath(uri)
 		const file = await this.resolve(uri)
 		const path = this.FS.resolve(this.cwd, this.root, file)
 		this.FS.appendFileSync(path, chunk, {
-			encoding: /** @type {BufferEncoding} */ (this.encoding)
+			encoding: /** @type {BufferEncoding} */ (this.encoding),
 		})
 		return true
 	}
@@ -177,20 +178,21 @@ class DBFS extends DB {
 	 * @returns {Promise<boolean>} True if dropped successfully, false otherwise.
 	 */
 	async dropDocument(uri) {
-		this.console.debug("Deleting document", { uri })
-		await this.ensureAccess(uri, "d")
+		this.console.debug('Deleting document', { uri })
+		await this.ensureAccess(uri, 'd')
 		const file = await this.resolve(uri)
 		let stat = await this.statDocument(uri)
 		if (!stat.exists) return false
 		const path = this.FS.resolve(this.cwd, this.root, file)
 		if (stat.isDirectory) {
-			const nested = Array.from(this.meta.keys()).filter(u => u.startsWith(file + "/")).length
+			const nested = Array.from(this.meta.keys()).filter((u) => u.startsWith(file + '/')).length
 			if (nested > 0) {
-				throw new Error("Directory has children, delete them first")
+				throw new Error('Directory has children, delete them first')
 			}
 			this.FS.rmdirSync(path)
 			this.meta.delete(file)
 			this.data.delete(file)
+			this.emit('change', { uri, type: 'drop' })
 			return true
 		}
 		this.FS.unlinkSync(path)
@@ -198,6 +200,7 @@ class DBFS extends DB {
 		if (!stat.exists) {
 			this.data.delete(file)
 			this.meta.delete(file)
+			this.emit('change', { uri, type: 'drop' })
 		}
 		return !stat.exists
 	}
@@ -225,15 +228,15 @@ class DBFS extends DB {
 	 * @param {"r"|"w"|"d"} [level="r"] The access level: read, write, or delete.
 	 * @returns {Promise<void>} True if access is granted.
 	 */
-	async ensureAccess(uri, level = "r") {
+	async ensureAccess(uri, level = 'r') {
 		await super.ensureAccess(uri, level)
 		const path = await this.resolve(uri)
-		if (uri.endsWith("/llm.config.js")) {
+		if (uri.endsWith('/llm.config.js')) {
 			/** @note load config file from anywhere */
 			return
 		}
-		if (path.startsWith("..")) {
-			throw new Error("No access outside of the db container")
+		if (path.startsWith('..')) {
+			throw new Error('No access outside of the db container')
 		}
 	}
 
@@ -244,7 +247,7 @@ class DBFS extends DB {
 	 * @returns {Promise<DocumentEntry[]>} The list of directory entries.
 	 */
 	async listDir(uri, { depth = 0, skipStat = false } = {}) {
-		this.console.debug("Listing directory", { uri, depth, skipStat })
+		this.console.debug('Listing directory', { uri, depth, skipStat })
 		const path = this.FS.resolve(this.cwd, this.root, uri)
 		const entries = this.FS.readdirSync(path, { withFileTypes: true })
 		const files = entries.map((entry) => {
@@ -255,13 +258,13 @@ class DBFS extends DB {
 					stat = DBFS.createDocumentStatFrom(this.FS.statSync(entryPath))
 				} catch (err) {
 					stat = new DocumentStat({
-						error: /** @type {Error} */ (err)
+						error: /** @type {Error} */ (err),
 					})
 				}
 			}
 			const file = this.FS.relative(
 				this.FS.resolve(this.cwd, this.root),
-				this.FS.resolve(path, entry.name)
+				this.FS.resolve(path, entry.name),
 			)
 			return new DocumentEntry({
 				stat,
@@ -281,17 +284,17 @@ class DBFS extends DB {
 	 */
 	absolute(...args) {
 		// Check if any argument is already an absolute URI
-		const isAbsoluteURI = args.some(arg => arg.startsWith("/"))
+		const isAbsoluteURI = args.some((arg) => arg.startsWith('/'))
 
 		if (isAbsoluteURI) {
 			// Find the absolute URI argument and return it unchanged
-			const absoluteArg = args.find(arg => arg.startsWith("/"))
-			return absoluteArg || "/"
+			const absoluteArg = args.find((arg) => arg.startsWith('/'))
+			return absoluteArg || '/'
 		}
 
 		// Return absolute filesystem path
 		const resolved = this.resolveSync(...args)
-		const root = this.root.startsWith("/") ? this.root.slice(1) : this.root
+		const root = this.root.startsWith('/') ? this.root.slice(1) : this.root
 		return this.FS.resolve(this.cwd, root, resolved)
 	}
 
@@ -303,8 +306,8 @@ class DBFS extends DB {
 	 */
 	relative(from, to) {
 		// If both paths are absolute filesystem paths, compute relative path
-		if (from.startsWith("/") && to?.startsWith("/")) {
-			if (!to.endsWith("/")) to += "/"
+		if (from.startsWith('/') && to?.startsWith('/')) {
+			if (!to.endsWith('/')) to += '/'
 			return from.startsWith(to) ? from.substring(to.length) : from
 		}
 
@@ -322,7 +325,7 @@ class DBFS extends DB {
 	 * @returns {string} The path with forward slashes.
 	 */
 	static winFix(path) {
-		return "/" === this.FS.sep ? path : path.replaceAll(this.FS.sep, "/")
+		return '/' === this.FS.sep ? path : path.replaceAll(this.FS.sep, '/')
 	}
 	/**
 	 * Creates a DocumentStat instance from fs.Stats.

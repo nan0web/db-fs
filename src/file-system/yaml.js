@@ -1,5 +1,5 @@
-import fs from "node:fs"
-import YAML from "yaml"
+import fs from 'node:fs'
+import YAML from 'yaml'
 
 /**
  * Loads and parses YAML file.
@@ -11,7 +11,7 @@ import YAML from "yaml"
  */
 function loadYAML(file, softError = false) {
 	try {
-		const content = fs.readFileSync(file, { encoding: "utf-8" })
+		const content = fs.readFileSync(file, { encoding: 'utf-8' })
 		return YAML.parse(content)
 	} catch (err) {
 		if (!softError) throw err
@@ -28,7 +28,7 @@ function loadYAML(file, softError = false) {
  */
 function saveYAML(file, data) {
 	const yaml = YAML.stringify(data)
-	fs.writeFileSync(file, yaml, { encoding: "utf-8" })
+	fs.writeFileSync(file, yaml, { encoding: 'utf-8' })
 	return yaml
 }
 

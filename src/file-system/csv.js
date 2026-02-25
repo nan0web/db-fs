@@ -11,7 +11,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
  * @throws {Error} If file not found or parsing fails.
  */
 function loadCSV(filePath, delimiter = ',', quote = '"', softError = false) {
-	if ('undefined' === typeof delimiter) delimiter = ","
+	if ('undefined' === typeof delimiter) delimiter = ','
 	if ('undefined' === typeof quote) quote = '"'
 	if (!existsSync(filePath)) {
 		throw new Error(`File not found: ${filePath}`)
@@ -21,9 +21,9 @@ function loadCSV(filePath, delimiter = ',', quote = '"', softError = false) {
 		const all = parseCSV(content, delimiter, quote)
 		const cols = all[0] // Column headers
 		const rows = all.slice(1) // Data rows
-		return rows.map(row => {
+		return rows.map((row) => {
 			const result = {}
-			row.forEach((value, i) => result[cols[i]] = decodeValue(value)) // Ensure values are decoded
+			row.forEach((value, i) => (result[cols[i]] = decodeValue(value))) // Ensure values are decoded
 			return result
 		})
 	} catch (err) {
@@ -81,7 +81,10 @@ function parseCSV(content, delimiter = ',', quote = '"') {
 			// End of a value
 			currentRow.push(decodeValue(currentValue)) // Decode value
 			currentValue = ''
-		} else if ((currentChar === '\n' || (currentChar === '\r' && content[i + 1] === '\n')) && !inQuotes) {
+		} else if (
+			(currentChar === '\n' || (currentChar === '\r' && content[i + 1] === '\n')) &&
+			!inQuotes
+		) {
 			// End of a row
 			if (currentChar === '\r' && content[i + 1] === '\n') {
 				++i // Skip the \n part of \r\n
@@ -118,15 +121,18 @@ function parseCSV(content, delimiter = ',', quote = '"') {
  */
 function saveCSV(filePath, data, delimiter = ',', quote = '"', eol = '\n') {
 	const escapeCell = (cell) => {
-		if (typeof cell === 'string' && (cell.includes(delimiter) || cell.includes(quote) || cell.includes(eol))) {
+		if (
+			typeof cell === 'string' &&
+			(cell.includes(delimiter) || cell.includes(quote) || cell.includes(eol))
+		) {
 			cell = cell.replace(new RegExp(quote, 'g'), `${quote}${quote}`)
 			return `${quote}${cell}${quote}`
 		}
 		return cell
 	}
 
-	let text = ""
-	if ("string" === typeof data) {
+	let text = ''
+	if ('string' === typeof data) {
 		text = data
 	} else {
 		const csv = []

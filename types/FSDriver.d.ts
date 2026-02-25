@@ -23,7 +23,7 @@ export default class FSDriver extends DBDriverProtocol {
      * @returns {Promise<boolean | void>} - TRUE if allowed, FALSE if denied, undefined if not realized.
      * @throws {Error} - Access denied (e.g., no write permission)
      */
-    access(absoluteURI: string, level?: "r" | "w" | "d" | undefined, context?: AuthContext | undefined): Promise<boolean | void>;
+    access(absoluteURI: string, level?: "r" | "w" | "d", context?: AuthContext): Promise<boolean | void>;
     /**
      * Ensures directory exists.
      * @param {string} dirPath

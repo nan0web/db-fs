@@ -113,7 +113,7 @@ declare class DBFS extends DB {
      * @param {"r"|"w"|"d"} [level="r"] The access level: read, write, or delete.
      * @returns {Promise<void>} True if access is granted.
      */
-    ensureAccess(uri: string, level?: "r" | "w" | "d" | undefined): Promise<void>;
+    ensureAccess(uri: string, level?: "r" | "w" | "d"): Promise<void>;
     /**
      * Lists the contents of a directory.
      * @param {string} uri The directory URI to list.
@@ -125,7 +125,7 @@ declare class DBFS extends DB {
         skipStat?: boolean;
     }): Promise<DocumentEntry[]>;
 }
-import DB from "@nan0web/db";
-import FS from "./FSAdapter.js";
-import { DocumentStat } from "@nan0web/db";
-import { DocumentEntry } from "@nan0web/db";
+import DB from '@nan0web/db';
+import FS from './FSAdapter.js';
+import { DocumentStat } from '@nan0web/db';
+import { DocumentEntry } from '@nan0web/db';
