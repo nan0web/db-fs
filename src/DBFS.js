@@ -251,15 +251,16 @@ class DBFS extends DB {
 		const path = this.FS.resolve(this.cwd, this.root, uri)
 		const entries = this.FS.readdirSync(path, { withFileTypes: true })
 		const files = entries.map((entry) => {
-			let stat = new DocumentStat()
+			let stat = new DocumentStat({
+				isDirectory: entry.isDirectory(),
+				isFile: entry.isFile(),
+			})
 			if (!skipStat) {
 				try {
 					const entryPath = this.FS.resolve(path, entry.name)
-					stat = DBFS.createDocumentStatFrom(this.FS.statSync(entryPath))
+					Object.assign(stat, DBFS.createDocumentStatFrom(this.FS.statSync(entryPath)))
 				} catch (err) {
-					stat = new DocumentStat({
-						error: /** @type {Error} */ (err),
-					})
+					stat.error = /** @type {Error} */ (err)
 				}
 			}
 			const file = this.FS.relative(
