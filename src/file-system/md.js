@@ -1,19 +1,11 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import YAML from 'yaml'
 
 const FRONTMATTER_SEPARATOR = '---'
 
 /**
  * Loads a Markdown file with optional YAML frontmatter.
- * Everything between the first pair of `---` lines is parsed as YAML metadata.
- * Everything after the closing `---` becomes the `content` field.
- *
- * Returns a flat object: { ...metadata, content }.
- * If no frontmatter is found, returns { content: rawText }.
- *
- * @param {string} file - Path to .md file.
- * @param {boolean} [softError=false] - Return null instead of throwing on error.
- * @returns {object|null} Parsed document with metadata + content.
  */
 function loadMD(file, softError = false) {
 	try {
@@ -26,9 +18,20 @@ function loadMD(file, softError = false) {
 }
 
 /**
+ * Loads a Markdown file asynchronously.
+ */
+async function loadMDAsync(file, softError = false) {
+	try {
+		const raw = await fsp.readFile(file, 'utf-8')
+		return parseMD(raw)
+	} catch (err) {
+		if (!softError) throw err
+		return null
+	}
+}
+
+/**
  * Parse raw Markdown string with optional YAML frontmatter.
- * @param {string} raw - Raw Markdown text.
- * @returns {object} { ...metadata, content }
  */
 function parseMD(raw) {
 	const trimmed = raw.trimStart()
@@ -36,7 +39,6 @@ function parseMD(raw) {
 		return { content: raw }
 	}
 
-	// Find closing ---
 	const afterFirst = trimmed.indexOf('\n') + 1
 	const closingIndex = trimmed.indexOf('\n' + FRONTMATTER_SEPARATOR, afterFirst)
 
@@ -55,34 +57,40 @@ function parseMD(raw) {
 
 /**
  * Saves data as Markdown with YAML frontmatter.
- * The `content` field becomes the Markdown body.
- * All other fields become YAML frontmatter.
- *
- * @param {string} file - Path to save .md file.
- * @param {object} data - Object with metadata fields and `content` string.
- * @returns {string} Written file content.
  */
 function saveMD(file, data) {
-	// Plain string → write as-is (no frontmatter)
 	if ('string' === typeof data || data instanceof Buffer) {
 		const text = String(data)
 		fs.writeFileSync(file, text, 'utf-8')
 		return text
 	}
 	const { content = '', ...metadata } = data
-	let output = ''
-
 	const hasMetadata = Object.keys(metadata).length > 0
-	if (hasMetadata) {
-		output += FRONTMATTER_SEPARATOR + '\n'
-		output += YAML.stringify(metadata).trimEnd() + '\n'
-		output += FRONTMATTER_SEPARATOR + '\n'
-	}
-
-	output += content
+	let output = hasMetadata
+		? [FRONTMATTER_SEPARATOR, YAML.stringify(metadata).trimEnd(), FRONTMATTER_SEPARATOR, content].join('\n')
+		: content
 
 	fs.writeFileSync(file, output, 'utf-8')
 	return output
 }
 
-export { loadMD, saveMD, parseMD }
+/**
+ * Saves data as Markdown asynchronously.
+ */
+async function saveMDAsync(file, data) {
+	if ('string' === typeof data || data instanceof Buffer) {
+		const text = String(data)
+		await fsp.writeFile(file, text, 'utf-8')
+		return text
+	}
+	const { content = '', ...metadata } = data
+	const hasMetadata = Object.keys(metadata).length > 0
+	const output = hasMetadata
+		? [FRONTMATTER_SEPARATOR, YAML.stringify(metadata).trimEnd(), FRONTMATTER_SEPARATOR, content].join('\n')
+		: content
+
+	await fsp.writeFile(file, output, 'utf-8')
+	return output
+}
+
+export { loadMD, saveMD, parseMD, loadMDAsync, saveMDAsync }

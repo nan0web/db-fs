@@ -21,7 +21,7 @@ class DBFS extends DB {
 	 */
 	savers = [
 		/** @param {string} file @param {any} data @param {string} ext */
-		(file, data, ext) => this.FS.save(file, data),
+		(file, data, ext) => this.FS.saveAsync(file, data),
 	]
 
 	/**
@@ -67,12 +67,12 @@ class DBFS extends DB {
 		const file = await this.resolve(uri)
 		const path = this.FS.resolve(this.cwd, this.root, file)
 		try {
-			if (!this.FS.existsSync(path)) {
+			if (!(await this.FS.exists(path))) {
 				return new DocumentStat({
 					error: new Error('Document not found'),
 				})
 			}
-			return DBFS.createDocumentStatFrom(this.FS.statSync(path))
+			return DBFS.createDocumentStatFrom(await this.FS.stat(path))
 		} catch (/** @type {any} */ err) {
 			return new DocumentStat({
 				error: err,
@@ -102,9 +102,17 @@ class DBFS extends DB {
 		await this.ensureAccess(uri, 'r')
 		const file = await this.resolve(uri)
 		const path = this.FS.resolve(this.cwd, this.root, file)
-		if (!this.FS.existsSync(path)) {
+		if (!(await this.FS.exists(path))) {
 			return this.data.has(file) ? this.data.get(file) : defaultValue
 		}
+
+		// Optimization: Use FS.loadAsync directly if not using custom loaders
+		// But only if we are't explicitly asking for .txt or other raw format
+		if (ext !== '.txt') {
+			const res = await this.FS.loadAsync(path, { format: ext, softError: true })
+			if (res !== false && typeof res !== 'string') return res
+		}
+
 		for (const loader of this.loaders) {
 			try {
 				const res = loader(path, null, ext)
@@ -126,7 +134,7 @@ class DBFS extends DB {
 	async _buildPath(uri) {
 		const dir = await this.resolve(uri, '..')
 		const path = this.location(dir)
-		this.FS.mkdirSync(path, { recursive: true })
+		await this.FS.mkdir(path, { recursive: true })
 	}
 	/**
 	 * Saves a document to the given URI.
@@ -142,14 +150,13 @@ class DBFS extends DB {
 		const file = await this.resolve(uri)
 		const path = this.FS.resolve(this.cwd, this.root, file)
 		const ext = this.extname(uri)
-		for (const saver of this.savers) {
-			if (false !== saver(path, document, ext)) {
-				const stat = await this.statDocument(uri)
-				this.meta.set(uri, stat)
-				this.data.set(uri, false)
-				this.emit('change', { uri, type: 'save', data: document })
-				return true
-			}
+		const res = await this.FS.saveAsync(path, document, ext)
+		if (false !== res) {
+			const stat = await this.statDocument(uri)
+			this.meta.set(uri, stat)
+			this.data.set(uri, false)
+			this.emit('change', { uri, type: 'save', data: document })
+			return true
 		}
 		return false
 	}
@@ -166,7 +173,7 @@ class DBFS extends DB {
 		await this._buildPath(uri)
 		const file = await this.resolve(uri)
 		const path = this.FS.resolve(this.cwd, this.root, file)
-		this.FS.appendFileSync(path, chunk, {
+		await this.FS.appendFile(path, chunk, {
 			encoding: /** @type {BufferEncoding} */ (this.encoding),
 		})
 		return true
@@ -189,13 +196,13 @@ class DBFS extends DB {
 			if (nested > 0) {
 				throw new Error('Directory has children, delete them first')
 			}
-			this.FS.rmdirSync(path)
+			await this.FS.rmdir(path)
 			this.meta.delete(file)
 			this.data.delete(file)
 			this.emit('change', { uri, type: 'drop' })
 			return true
 		}
-		this.FS.unlinkSync(path)
+		await this.FS.unlink(path)
 		stat = await this.statDocument(uri)
 		if (!stat.exists) {
 			this.data.delete(file)
@@ -249,8 +256,8 @@ class DBFS extends DB {
 	async listDir(uri, { depth = 0, skipStat = false } = {}) {
 		this.console.debug('Listing directory', { uri, depth, skipStat })
 		const path = this.FS.resolve(this.cwd, this.root, uri)
-		const entries = this.FS.readdirSync(path, { withFileTypes: true })
-		const files = entries.map((entry) => {
+		const entries = await this.FS.readdir(path, { withFileTypes: true })
+		const files = await Promise.all(entries.map(async (entry) => {
 			let stat = new DocumentStat({
 				isDirectory: entry.isDirectory(),
 				isFile: entry.isFile(),
@@ -258,7 +265,7 @@ class DBFS extends DB {
 			if (!skipStat) {
 				try {
 					const entryPath = this.FS.resolve(path, entry.name)
-					Object.assign(stat, DBFS.createDocumentStatFrom(this.FS.statSync(entryPath)))
+					Object.assign(stat, DBFS.createDocumentStatFrom(await this.FS.stat(entryPath)))
 				} catch (err) {
 					stat.error = /** @type {Error} */ (err)
 				}
@@ -273,7 +280,7 @@ class DBFS extends DB {
 				path: file,
 				depth,
 			})
-		})
+		}))
 		files.sort((a, b) => Number(b.stat.isDirectory) - Number(a.stat.isDirectory))
 		return files
 	}

@@ -19,4 +19,15 @@ DBFS **override'ить** `saveDocument()` і `dropDocument()` — тепер з 
 - [x] `yaml` додано до `dependencies` (fix standalone ERR_MODULE_NOT_FOUND)
 - [x] Version bumped to `1.1.2`
 
-#.
+## v1.1.4 — Patch
+
+- [x] Fix CSV save: delimiter was overridden by file extension from DBFS.saveDocument
+- [x] 175/181 pass, 0 fail
+
+## Next — Release Infrastructure
+
+- [ ] **AGRP Release Protocol**: Створити `releases/` структуру, `task.spec.js`, `release:spec`, `release:verify`, `release:close` скрипти
+
+---
+
+_Оновлено: 2026-03-02_

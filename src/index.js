@@ -23,6 +23,8 @@ export {
 	saveJSON,
 	loadTXT,
 	saveTXT,
+	loadNAN,
+	saveNAN,
 } from './file-system/index.js'
 
 export class DBwithFSDriver extends DB {

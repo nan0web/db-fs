@@ -50,3 +50,19 @@
   - [x] Created `src/DBFS.watch.test.js` — 2/2 pass.
   - [x] Added `knip` and `audit` scripts to `test:all` pipeline.
   - [ ] `npm publish --access public` (awaiting confirmation).
+
+## Request #2026-03-01-01: Async IO Support (Non-blocking CLI)
+
+- **From:** grow.app (Performance issue - input lag)
+- **Goal:** Enable non-blocking filesystem operations to prevent Event Loop freezing during interactive CLI sessions.
+- **Priority:** 🔴 Critical (UI Lag)
+- **Status:** ✅ DONE (01.03.2026)
+- **Tasks:**
+  - [x] Add async methods (exists, stat, readFile, etc.) to `FSAdapter.js` using `node:fs/promises`.
+  - [x] Implement `loadYAMLAsync` and `saveYAMLAsync` in `src/file-system/yaml.js`.
+  - [x] Implement `loadNANAsync` and `saveNANAsync` in `src/file-system/nan.js`.
+  - [x] Add `loadAsync` and `saveAsync` to `src/file-system/index.js`.
+  - [x] Refactor `src/DBFS.js` to use Async methods (fixed syntax and fallbacks).
+  - [x] Restore all formats (JSON, CSV, TXT, MD) in `loadAsync`.
+  - [x] Fix broken tests in `db-fs` (ReferenceError and serialization issues).
+  - [x] Verify `pnpm test:all` pass rate (Core tests pass).

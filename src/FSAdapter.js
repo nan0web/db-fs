@@ -11,7 +11,18 @@ import {
 	readFileSync,
 	writeFileSync,
 } from 'node:fs'
-import { load, loadTXT, save } from './file-system/index.js'
+import {
+	appendFile,
+	mkdir,
+	stat,
+	readdir,
+	unlink,
+	rmdir,
+	readFile,
+	writeFile,
+	access,
+} from 'node:fs/promises'
+import { load, loadAsync, loadTXT, save, saveAsync } from './file-system/index.js'
 
 /** @typedef {{ recursive?: boolean, mode?: number | string }} MakeDirectoryOptions */
 
@@ -215,5 +226,106 @@ export default class FS {
 	static appendFileSync(path, data, options) {
 		FS.buildPath(path)
 		appendFileSync(path, data, options)
+	}
+
+	/**
+	 * Loads file content based on extension.
+	 */
+	static async loadAsync(file, opts) {
+		return await loadAsync(file, opts)
+	}
+
+	/**
+	 * Saves data to file with automatic format handling.
+	 */
+	static async saveAsync(file, data, ...args) {
+		await FS.ensurePath(file)
+		return await saveAsync(file, data, ...args)
+	}
+
+	// --- ASYNC METHODS ---
+
+	/**
+	 * Checks if a file or directory exists.
+	 * @param {string} path
+	 * @returns {Promise<boolean>}
+	 */
+	static async exists(path) {
+		try {
+			await access(path)
+			return true
+		} catch {
+			return false
+		}
+	}
+
+	/**
+	 * Creates directory recursively.
+	 */
+	static async mkdir(path, options) {
+		return await mkdir(path, options)
+	}
+
+	/**
+	 * Gets file statistics.
+	 */
+	static async stat(path, options) {
+		return await stat(path, options)
+	}
+
+	/**
+	 * Reads directory contents.
+	 */
+	static async readdir(path, options) {
+		return await readdir(path, options)
+	}
+
+	/**
+	 * Deletes a file.
+	 */
+	static async unlink(path) {
+		return await unlink(path)
+	}
+
+	/**
+	 * Removes directory.
+	 */
+	static async rmdir(path, options) {
+		if (options?.recursive) {
+			// node:fs/promises rm doesn't exist in all node versions as such, but rmdir with recursive is deprecated.
+			// however, we use it for now as it's common.
+			const { rm } = await import('node:fs/promises')
+			return await rm(path, { recursive: true, force: true })
+		}
+		return await rmdir(path, options)
+	}
+
+	/**
+	 * Reads file content.
+	 */
+	static async readFile(path, options) {
+		return await readFile(path, options)
+	}
+
+	/**
+	 * Writes data to file.
+	 */
+	static async writeFile(path, data, options) {
+		await FS.ensurePath(path)
+		return await writeFile(path, data, options)
+	}
+
+	/**
+	 * Appends data to a file.
+	 */
+	static async appendFile(path, data, options) {
+		await FS.ensurePath(path)
+		return await appendFile(path, data, options)
+	}
+
+	static async ensurePath(path) {
+		const dir = FS.dirname(path)
+		if (await FS.exists(dir)) return
+		await FS.mkdir(dir, { recursive: true })
 	}
 }

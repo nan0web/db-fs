@@ -1,152 +1,137 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import fsp from 'node:fs/promises'
 
 /**
  * Loads and parses CSV file into array of objects.
- * @function
- * @param {string} filePath - Path to CSV file.
- * @param {string} [delimiter=','] - Field delimiter.
- * @param {string} [quote='"'] - Quote character.
- * @param {boolean} [softError=false] - Suppress errors.
- * @returns {Object[]} Array of objects representing CSV rows.
- * @throws {Error} If file not found or parsing fails.
  */
 function loadCSV(filePath, delimiter = ',', quote = '"', softError = false) {
-	if ('undefined' === typeof delimiter) delimiter = ','
-	if ('undefined' === typeof quote) quote = '"'
 	if (!existsSync(filePath)) {
+		if (softError) return []
 		throw new Error(`File not found: ${filePath}`)
 	}
 	try {
 		const content = readFileSync(filePath, { encoding: 'utf-8' })
-		const all = parseCSV(content, delimiter, quote)
-		const cols = all[0] // Column headers
-		const rows = all.slice(1) // Data rows
-		return rows.map((row) => {
-			const result = {}
-			row.forEach((value, i) => (result[cols[i]] = decodeValue(value))) // Ensure values are decoded
-			return result
-		})
+		return parseToObjects(content, delimiter, quote)
 	} catch (err) {
-		if (!softError) throw err
-		return []
+		if (softError) return []
+		throw err
 	}
 }
 
 /**
+ * Loads and parses CSV file asynchronously.
+ */
+async function loadCSVAsync(filePath, delimiter = ',', quote = '"', softError = false) {
+	try {
+		const content = await fsp.readFile(filePath, 'utf-8')
+		return parseToObjects(content, delimiter, quote)
+	} catch (err) {
+		if (softError) return []
+		throw err
+	}
+}
+
+/**
+ * Common logic to parse CSV string into objects.
+ */
+function parseToObjects(content, delimiter = ',', quote = '"') {
+	const all = parseCSV(content, delimiter, quote)
+	if (all.length === 0) return []
+	const cols = all[0]
+	const rows = all.slice(1)
+	return rows.map((row) => {
+		const result = {}
+		row.forEach((value, i) => (result[cols[i]] = decodeValue(value)))
+		return result
+	})
+}
+
+/**
  * Decodes CSV cell value to appropriate type.
- * @function
- * @param {string} value - Cell value.
- * @returns {string|number} Decoded value.
  */
 function decodeValue(value) {
 	value = `${value}`.trim()
-	// If value is empty, return as string
-	if (value === '') {
-		return value
-	}
-	// Check if the trimmed value is a number
-	if (!isNaN(parseFloat(value)) && isFinite(Number(value))) {
-		return Number(value)
-	}
+	if (value === '') return value
+	if (!isNaN(parseFloat(value)) && isFinite(Number(value))) return Number(value)
 	return value
 }
 
 /**
  * Parses CSV content into 2D array.
- * @function
- * @param {string} content - CSV content.
- * @param {string} [delimiter=','] - Field delimiter.
- * @param {string} [quote='"'] - Quote character.
- * @returns {Array[]} 2D array of parsed CSV data.
  */
 function parseCSV(content, delimiter = ',', quote = '"') {
 	const rows = []
 	let currentRow = []
 	let currentValue = ''
 	let inQuotes = false
-	let currentChar = ''
 
 	for (let i = 0; i < content.length; i++) {
-		currentChar = content[i]
-
-		if (currentChar === quote) {
+		const char = content[i]
+		if (char === quote) {
 			if (inQuotes && content[i + 1] === quote) {
-				// Escaped quote inside quoted field
 				currentValue += quote
-				++i // Skip next quote
+				i++
 			} else {
 				inQuotes = !inQuotes
 			}
-		} else if (currentChar === delimiter && !inQuotes) {
-			// End of a value
-			currentRow.push(decodeValue(currentValue)) // Decode value
+		} else if (char === delimiter && !inQuotes) {
+			currentRow.push(decodeValue(currentValue))
 			currentValue = ''
-		} else if (
-			(currentChar === '\n' || (currentChar === '\r' && content[i + 1] === '\n')) &&
-			!inQuotes
-		) {
-			// End of a row
-			if (currentChar === '\r' && content[i + 1] === '\n') {
-				++i // Skip the \n part of \r\n
-			}
-			currentRow.push(decodeValue(currentValue)) // Decode value
+		} else if ((char === '\n' || (char === '\r' && content[i + 1] === '\n')) && !inQuotes) {
+			if (char === '\r' && content[i + 1] === '\n') i++
+			currentRow.push(decodeValue(currentValue))
 			rows.push(currentRow)
 			currentRow = []
 			currentValue = ''
 		} else {
-			currentValue += currentChar
+			currentValue += char
 		}
 	}
 
-	// Push the last value and row if there are any remaining
 	if (currentValue || content.endsWith('\n') || content.endsWith('\r')) {
 		currentRow.push(decodeValue(currentValue))
 	}
-	if (currentRow.length > 0) {
-		rows.push(currentRow)
-	}
-
+	if (currentRow.length > 0) rows.push(currentRow)
 	return rows
 }
 
 /**
  * Saves data as CSV file.
- * @function
- * @param {string} filePath - Path to save CSV.
- * @param {Object[] | string} data - Array of objects to save.
- * @param {string} [delimiter=','] - Field delimiter.
- * @param {string} [quote='"'] - Quote character.
- * @param {string} [eol='\n'] - End of line character.
- * @returns {string} The file content.
  */
 function saveCSV(filePath, data, delimiter = ',', quote = '"', eol = '\n') {
+	const text = stringifyCSV(data, delimiter, quote, eol)
+	writeFileSync(filePath, text, 'utf8')
+	return text
+}
+
+/**
+ * Saves data as CSV file asynchronously.
+ */
+async function saveCSVAsync(filePath, data, delimiter = ',', quote = '"', eol = '\n') {
+	const text = stringifyCSV(data, delimiter, quote, eol)
+	await fsp.writeFile(filePath, text, 'utf8')
+	return text
+}
+
+/**
+ * Internal logic for CSV stringification.
+ */
+function stringifyCSV(data, delimiter = ',', quote = '"', eol = '\n') {
 	const escapeCell = (cell) => {
-		if (
-			typeof cell === 'string' &&
-			(cell.includes(delimiter) || cell.includes(quote) || cell.includes(eol))
-		) {
+		if (typeof cell === 'string' && (cell.includes(delimiter) || cell.includes(quote) || cell.includes(eol))) {
 			cell = cell.replace(new RegExp(quote, 'g'), `${quote}${quote}`)
 			return `${quote}${cell}${quote}`
 		}
 		return cell
 	}
 
-	let text = ''
-	if ('string' === typeof data) {
-		text = data
-	} else {
-		const csv = []
-		data.forEach((row, i) => {
-			if (0 === i) {
-				csv.push(Object.keys(row).map(escapeCell).join(delimiter))
-			}
-			csv.push(Object.values(row).map(escapeCell).join(delimiter))
-		})
-
-		text = csv.join(eol)
-	}
-	writeFileSync(filePath, text, 'utf8')
-	return text
+	if (typeof data === 'string') return data
+	const csv = []
+	data.forEach((row, i) => {
+		if (i === 0) csv.push(Object.keys(row).map(escapeCell).join(delimiter))
+		csv.push(Object.values(row).map(escapeCell).join(delimiter))
+	})
+	return csv.join(eol)
 }
 
-export { loadCSV, saveCSV, parseCSV }
+export { loadCSV, saveCSV, parseCSV, loadCSVAsync, saveCSVAsync }
