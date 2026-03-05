@@ -65,7 +65,8 @@ class DBFS extends DB {
 	async statDocument(uri) {
 		this.console.debug('Getting document statistics', { uri })
 		const file = await this.resolve(uri)
-		const path = this.FS.resolve(this.cwd, this.root, file)
+		const cleanFile = file.startsWith('/') ? file.slice(1) : file
+		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
 		try {
 			if (!(await this.FS.exists(path))) {
 				return new DocumentStat({
@@ -79,17 +80,7 @@ class DBFS extends DB {
 			})
 		}
 	}
-	/**
-	 * Loads a document from the given URI.
-	 * @param {string} uri The URI to load the document from.
-	 * @param {any} defaultValue The default value to return if the document does not exist.
-	 * @returns {Promise<any>} The loaded document or the default value.
-	 */
-	async loadDocument(uri, defaultValue = '') {
-		this.console.debug('Loading document', { uri, defaultValue })
-		const ext = this.extname(uri)
-		return await this.loadDocumentAs(ext, uri, defaultValue)
-	}
+
 	/**
 	 * Loads a document using a specific extension handler.
 	 * @param {string} ext The extension of the document.
@@ -97,12 +88,24 @@ class DBFS extends DB {
 	 * @param {any} defaultValue The default value to return if the document does not exist.
 	 * @returns {Promise<any>} The loaded document or the default value.
 	 */
-	async loadDocumentAs(ext, uri, defaultValue = '') {
+	async loadDocumentAs(ext, uri, defaultValue = undefined) {
 		this.console.debug('Loading document as', { uri, ext, defaultValue })
 		await this.ensureAccess(uri, 'r')
 		const file = await this.resolve(uri)
-		const path = this.FS.resolve(this.cwd, this.root, file)
+		const cleanFile = file.startsWith('/') ? file.slice(1) : file
+		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
 		if (!(await this.FS.exists(path))) {
+			if (!ext) {
+				for (const fallbackExt of this.Directory.DATA_EXTNAMES) {
+					const stats = await this.statDocument(uri + fallbackExt)
+					if (stats.exists && stats.isFile) {
+						const data = await this.loadDocument(uri + fallbackExt, null)
+						if (null !== data) {
+							return data
+						}
+					}
+				}
+			}
 			return this.data.has(file) ? this.data.get(file) : defaultValue
 		}
 
@@ -110,6 +113,12 @@ class DBFS extends DB {
 		// But only if we are't explicitly asking for .txt or other raw format
 		if (ext !== '.txt') {
 			const res = await this.FS.loadAsync(path, { format: ext, softError: true })
+			this.console.debug('DBFS.loadDocumentAs FS.loadAsync result:', {
+				uri,
+				ext,
+				res,
+				type: typeof res,
+			})
 			if (res !== false && typeof res !== 'string') return res
 		}
 
@@ -148,7 +157,8 @@ class DBFS extends DB {
 		await this.ensureAccess(uri, 'w')
 		await this._buildPath(uri)
 		const file = await this.resolve(uri)
-		const path = this.FS.resolve(this.cwd, this.root, file)
+		const cleanFile = file.startsWith('/') ? file.slice(1) : file
+		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
 		const ext = this.extname(uri)
 		const res = await this.FS.saveAsync(path, document, ext)
 		if (false !== res) {
@@ -172,7 +182,8 @@ class DBFS extends DB {
 		await this.ensureAccess(uri, 'w')
 		await this._buildPath(uri)
 		const file = await this.resolve(uri)
-		const path = this.FS.resolve(this.cwd, this.root, file)
+		const cleanFile = file.startsWith('/') ? file.slice(1) : file
+		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
 		await this.FS.appendFile(path, chunk, {
 			encoding: /** @type {BufferEncoding} */ (this.encoding),
 		})
@@ -190,7 +201,8 @@ class DBFS extends DB {
 		const file = await this.resolve(uri)
 		let stat = await this.statDocument(uri)
 		if (!stat.exists) return false
-		const path = this.FS.resolve(this.cwd, this.root, file)
+		const cleanFile = file.startsWith('/') ? file.slice(1) : file
+		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
 		if (stat.isDirectory) {
 			const nested = Array.from(this.meta.keys()).filter((u) => u.startsWith(file + '/')).length
 			if (nested > 0) {
@@ -256,31 +268,35 @@ class DBFS extends DB {
 	async listDir(uri, { depth = 0, skipStat = false } = {}) {
 		this.console.debug('Listing directory', { uri, depth, skipStat })
 		const path = this.FS.resolve(this.cwd, this.root, uri)
-		const entries = await this.FS.readdir(path, { withFileTypes: true })
-		const files = await Promise.all(entries.map(async (entry) => {
-			let stat = new DocumentStat({
-				isDirectory: entry.isDirectory(),
-				isFile: entry.isFile(),
-			})
-			if (!skipStat) {
-				try {
-					const entryPath = this.FS.resolve(path, entry.name)
-					Object.assign(stat, DBFS.createDocumentStatFrom(await this.FS.stat(entryPath)))
-				} catch (err) {
-					stat.error = /** @type {Error} */ (err)
+		const entries = /** @type {import("node:fs").Dirent[]} */ (
+			/** @type {unknown} */ (await this.FS.readdir(path, { withFileTypes: true }))
+		)
+		const files = await Promise.all(
+			entries.map(async (entry) => {
+				let stat = new DocumentStat({
+					isDirectory: entry.isDirectory(),
+					isFile: entry.isFile(),
+				})
+				if (!skipStat) {
+					try {
+						const entryPath = this.FS.resolve(path, entry.name)
+						Object.assign(stat, DBFS.createDocumentStatFrom(await this.FS.stat(entryPath)))
+					} catch (err) {
+						stat.error = /** @type {Error} */ (err)
+					}
 				}
-			}
-			const file = this.FS.relative(
-				this.FS.resolve(this.cwd, this.root),
-				this.FS.resolve(path, entry.name),
-			)
-			return new DocumentEntry({
-				stat,
-				name: entry.name,
-				path: file,
-				depth,
-			})
-		}))
+				const file = this.FS.relative(
+					this.FS.resolve(this.cwd, this.root),
+					this.FS.resolve(path, entry.name),
+				)
+				return new DocumentEntry({
+					stat,
+					name: entry.name,
+					path: file,
+					depth,
+				})
+			}),
+		)
 		files.sort((a, b) => Number(b.stat.isDirectory) - Number(a.stat.isDirectory))
 		return files
 	}

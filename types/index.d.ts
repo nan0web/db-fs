@@ -8,4 +8,4 @@ import { DocumentStat } from '@nan0web/db';
 import FSDriver from './FSDriver.js';
 import DB from '@nan0web/db';
 export { DBFS, DocumentEntry, DocumentStat, FSDriver };
-export { load, save, loadCSV, saveCSV, loadJSON, saveJSON, loadTXT, saveTXT } from "./file-system/index.js";
+export { load, save, loadCSV, saveCSV, loadJSON, saveJSON, loadTXT, saveTXT, loadNAN, saveNAN } from "./file-system/index.js";

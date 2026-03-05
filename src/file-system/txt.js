@@ -31,6 +31,9 @@ const loadTXTAsync = async (txtFile, delimiter = '\n', softError = false) => {
 
 /**
  * Saves data to text file.
+ * @param {string} txtFile
+ * @param {string | any[]} [data]
+ * @param {string} [delimiter]
  */
 const saveTXT = (txtFile, data = [], delimiter = '\n') => {
 	const textContent = Array.isArray(data) ? data.join(delimiter) : `${data}`
@@ -40,6 +43,9 @@ const saveTXT = (txtFile, data = [], delimiter = '\n') => {
 
 /**
  * Saves data to text file asynchronously.
+ * @param {string} txtFile
+ * @param {string | any[]} [data]
+ * @param {string} [delimiter]
  */
 const saveTXTAsync = async (txtFile, data = [], delimiter = '\n') => {
 	const textContent = Array.isArray(data) ? data.join(delimiter) : `${data}`

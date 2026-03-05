@@ -147,6 +147,53 @@ export default class FS {
      * @returns {void}
      */
     static appendFileSync(path: string, data: string, options?: object): void;
+    /**
+     * Loads file content based on extension.
+     */
+    static loadAsync(file: any, opts: any): Promise<any>;
+    /**
+     * Saves data to file with automatic format handling.
+     */
+    static saveAsync(file: any, data: any, ...args: any[]): Promise<any>;
+    /**
+     * Checks if a file or directory exists.
+     * @param {string} path
+     * @returns {Promise<boolean>}
+     */
+    static exists(path: string): Promise<boolean>;
+    /**
+     * Creates directory recursively.
+     */
+    static mkdir(path: any, options: any): Promise<string | undefined>;
+    /**
+     * Gets file statistics.
+     */
+    static stat(path: any, options: any): Promise<import("fs").Stats>;
+    /**
+     * Reads directory contents.
+     */
+    static readdir(path: any, options: any): Promise<string[]>;
+    /**
+     * Deletes a file.
+     */
+    static unlink(path: any): Promise<void>;
+    /**
+     * Removes directory.
+     */
+    static rmdir(path: any, options: any): Promise<void>;
+    /**
+     * Reads file content.
+     */
+    static readFile(path: any, options: any): Promise<NonSharedBuffer>;
+    /**
+     * Writes data to file.
+     */
+    static writeFile(path: any, data: any, options: any): Promise<void>;
+    /**
+     * Appends data to a file.
+     */
+    static appendFile(path: any, data: any, options: any): Promise<void>;
+    static ensurePath(path: any): Promise<void>;
 }
 export type MakeDirectoryOptions = {
     recursive?: boolean;

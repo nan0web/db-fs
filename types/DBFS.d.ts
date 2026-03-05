@@ -57,13 +57,6 @@ declare class DBFS extends DB {
      */
     statDocument(uri: string): Promise<DocumentStat>;
     /**
-     * Loads a document from the given URI.
-     * @param {string} uri The URI to load the document from.
-     * @param {any} defaultValue The default value to return if the document does not exist.
-     * @returns {Promise<any>} The loaded document or the default value.
-     */
-    loadDocument(uri: string, defaultValue?: any): Promise<any>;
-    /**
      * Loads a document using a specific extension handler.
      * @param {string} ext The extension of the document.
      * @param {string} uri The URI to load the document from.

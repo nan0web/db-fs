@@ -1,37 +1,41 @@
 /**
  * Saves data to file based on extension.
- * @function
- * @param {string} file - File path.
- * @param {*} data - Data to save.
- * @param {...*} args - Format-specific arguments.
- * @returns {string} File content
  */
-export function save(file: string, data: any, ...args: any[]): string;
+export function save(file: any, data: any, ...args: any[]): any;
 /**
  * Loads file content based on extension.
- * @function
- * @param {string} file - File path.
- * @param {Object} [opts={}] - Loading options.
- * @param {String} [opts.format=extname(file)] - Suppress errors.
- * @param {boolean} [opts.softError=false] - Suppress errors.
- * @param {string} [opts.delimiter] - Delimiter for CSV/TXT.
- * @param {string} [opts.quote] - Quote character for CSV.
- * @returns {*} Parsed file content.
  */
-export function load(file: string, opts?: {
-    format?: string | undefined;
-    softError?: boolean | undefined;
-    delimiter?: string | undefined;
-    quote?: string | undefined;
-}): any;
+export function load(file: any, opts?: {}): any;
+/**
+ * Saves data asynchronously to file based on extension.
+ */
+export function saveAsync(file: any, data: any, ...args: any[]): Promise<any>;
+/**
+ * Loads file content asynchronously based on extension.
+ */
+export function loadAsync(file: any, opts?: {}): Promise<any>;
 import { saveCSV } from './csv.js';
 import { loadCSV } from './csv.js';
+import { loadCSVAsync } from './csv.js';
+import { saveCSVAsync } from './csv.js';
 import { saveJSON } from './json.js';
 import { loadJSON } from './json.js';
+import { loadJSONAsync } from './json.js';
+import { saveJSONAsync } from './json.js';
 import { saveTXT } from './txt.js';
 import { loadTXT } from './txt.js';
+import { loadTXTAsync } from './txt.js';
+import { saveTXTAsync } from './txt.js';
 import { saveYAML } from './yaml.js';
 import { loadYAML } from './yaml.js';
+import { loadYAMLAsync } from './yaml.js';
+import { saveYAMLAsync } from './yaml.js';
 import { loadMD } from './md.js';
 import { saveMD } from './md.js';
-export { saveCSV, loadCSV, saveJSON, loadJSON, saveTXT, loadTXT, saveYAML, loadYAML, loadMD, saveMD };
+import { loadMDAsync } from './md.js';
+import { saveMDAsync } from './md.js';
+import { loadNAN } from './nan.js';
+import { saveNAN } from './nan.js';
+import { loadNANAsync } from './nan.js';
+import { saveNANAsync } from './nan.js';
+export { saveCSV, loadCSV, loadCSVAsync, saveCSVAsync, saveJSON, loadJSON, loadJSONAsync, saveJSONAsync, saveTXT, loadTXT, loadTXTAsync, saveTXTAsync, saveYAML, loadYAML, loadYAMLAsync, saveYAMLAsync, loadMD, saveMD, loadMDAsync, saveMDAsync, loadNAN, saveNAN, loadNANAsync, saveNANAsync };

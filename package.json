@@ -15,7 +15,7 @@
 		"test": "node --test \"src/**/*.js\"",
 		"test:nan0test": "node --test \"src/**/*.test.js\" | nan0test parse --fail",
 		"test:play": "node --test \"play/**/*.test.js\"",
-		"knip": "pnpm dlx knip --production",
+		"knip": "knip --production",
 		"audit": "pnpm audit --prod || true",
 		"test:all": "npm run test && npm run test:play && npm run test:docs && npm run build && npm run knip && npm run audit",
 		"clean": "rm -rf .cache/ && rm -rf dist/",
@@ -46,7 +46,8 @@
 		"@nan0web/test": "*",
 		"@nan0web/types": "*",
 		"@nan0web/ui-cli": "*",
-		"husky": "^9.1.7"
+		"husky": "^9.1.7",
+		"knip": "^5.85.0"
 	},
 	"peerDependencies": {
 		"@nan0web/db": "*",

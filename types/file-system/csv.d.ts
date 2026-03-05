@@ -1,31 +1,20 @@
 /**
  * Loads and parses CSV file into array of objects.
- * @function
- * @param {string} filePath - Path to CSV file.
- * @param {string} [delimiter=','] - Field delimiter.
- * @param {string} [quote='"'] - Quote character.
- * @param {boolean} [softError=false] - Suppress errors.
- * @returns {Object[]} Array of objects representing CSV rows.
- * @throws {Error} If file not found or parsing fails.
  */
-export function loadCSV(filePath: string, delimiter?: string, quote?: string, softError?: boolean): any[];
+export function loadCSV(filePath: any, delimiter?: string, quote?: string, softError?: boolean): {}[];
 /**
  * Saves data as CSV file.
- * @function
- * @param {string} filePath - Path to save CSV.
- * @param {Object[] | string} data - Array of objects to save.
- * @param {string} [delimiter=','] - Field delimiter.
- * @param {string} [quote='"'] - Quote character.
- * @param {string} [eol='\n'] - End of line character.
- * @returns {string} The file content.
  */
-export function saveCSV(filePath: string, data: any[] | string, delimiter?: string, quote?: string, eol?: string): string;
+export function saveCSV(filePath: any, data: any, delimiter?: string, quote?: string, eol?: string): string;
 /**
  * Parses CSV content into 2D array.
- * @function
- * @param {string} content - CSV content.
- * @param {string} [delimiter=','] - Field delimiter.
- * @param {string} [quote='"'] - Quote character.
- * @returns {Array[]} 2D array of parsed CSV data.
  */
-export function parseCSV(content: string, delimiter?: string, quote?: string): any[][];
+export function parseCSV(content: any, delimiter?: string, quote?: string): any[][];
+/**
+ * Loads and parses CSV file asynchronously.
+ */
+export function loadCSVAsync(filePath: any, delimiter?: string, quote?: string, softError?: boolean): Promise<{}[]>;
+/**
+ * Saves data as CSV file asynchronously.
+ */
+export function saveCSVAsync(filePath: any, data: any, delimiter?: string, quote?: string, eol?: string): Promise<string>;

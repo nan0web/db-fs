@@ -1,18 +1,22 @@
 /**
  * Loads text file, optionally splitting by delimiter.
- * @function
- * @param {string} txtFile - Path to text file.
- * @param {string} [delimiter="\n"] - Delimiter to split content.
- * @param {boolean} [softError=false] - Suppress errors.
- * @returns {string|string[]} File content as string or array.
  */
-export function loadTXT(txtFile: string, delimiter?: string, softError?: boolean): string | string[];
+export function loadTXT(txtFile: any, delimiter?: string, softError?: boolean): string | string[];
 /**
  * Saves data to text file.
- * @function
- * @param {string} txtFile - Path to save file.
- * @param {string|string[]} [data=[]] - Data to save.
- * @param {string} [delimiter="\n"] - Delimiter to join array.
- * @returns {string} Empty string if failed, otherwise file content.
+ * @param {string} txtFile
+ * @param {string | any[]} [data]
+ * @param {string} [delimiter]
  */
-export function saveTXT(txtFile: string, data?: string | string[], delimiter?: string): string;
+export function saveTXT(txtFile: string, data?: string | any[], delimiter?: string): string;
+/**
+ * Loads text file asynchronously.
+ */
+export function loadTXTAsync(txtFile: any, delimiter?: string, softError?: boolean): Promise<string | string[]>;
+/**
+ * Saves data to text file asynchronously.
+ * @param {string} txtFile
+ * @param {string | any[]} [data]
+ * @param {string} [delimiter]
+ */
+export function saveTXTAsync(txtFile: string, data?: string | any[], delimiter?: string): Promise<string>;

@@ -15,3 +15,17 @@ export function loadYAML(file: string, softError?: boolean): any;
  * @returns {string} Stringified YAML.
  */
 export function saveYAML(file: string, data: any): string;
+/**
+ * Loads and parses YAML file asynchronously.
+ * @param {string} file
+ * @param {boolean} softError
+ * @returns {Promise<any>}
+ */
+export function loadYAMLAsync(file: string, softError?: boolean): Promise<any>;
+/**
+ * Saves data as YAML file asynchronously.
+ * @param {string} file
+ * @param {any} data
+ * @returns {Promise<string>}
+ */
+export function saveYAMLAsync(file: string, data: any): Promise<string>;
