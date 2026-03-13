@@ -263,10 +263,11 @@ describe('DBFS saveDocument and indexing tests', () => {
 describe('DBFS directory index handling', () => {
 	/** @type {DBFS} */
 	let db
-	const root = testDir.join('indexes')
+	const indexTestDir = new TestDir('dbfs-index-handling')
+	const root = indexTestDir.join('indexes')
 
 	beforeEach(async () => {
-		testDir.erase()
+		indexTestDir.erase()
 		db = new DBFS({ root })
 		await db.connect()
 	})

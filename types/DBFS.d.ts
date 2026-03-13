@@ -71,6 +71,15 @@ declare class DBFS extends DB {
      */
     _buildPath(uri: string): Promise<void>;
     /**
+     * Saves a document to the given URI, forcing a specific extension / format wrapper.
+     * @throws {Error} If the document cannot be saved.
+     * @param {string} ext The extension/format of the document (e.g. '.txt').
+     * @param {string} uri The URI to save the document to.
+     * @param {any} document The document to save.
+     * @returns {Promise<boolean>} True if saved successfully, false otherwise.
+     */
+    saveDocumentAs(ext: string, uri: string, document: any): Promise<boolean>;
+    /**
      * Saves a document to the given URI.
      * @throws {Error} If the document cannot be saved.
      * @param {string} uri The URI to save the document to.
@@ -117,6 +126,16 @@ declare class DBFS extends DB {
         depth?: number;
         skipStat?: boolean;
     }): Promise<DocumentEntry[]>;
+    /**
+     * Detects auto-locales based on first level directory names.
+     * Matches against built-in Intl language list.
+     * @returns {Promise<{locale: string, title: string, dir: string}[]>}
+     */
+    detectLocales(): Promise<{
+        locale: string;
+        title: string;
+        dir: string;
+    }[]>;
 }
 import DB from '@nan0web/db';
 import FS from './FSAdapter.js';

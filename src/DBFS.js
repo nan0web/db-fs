@@ -146,6 +146,32 @@ class DBFS extends DB {
 		await this.FS.mkdir(path, { recursive: true })
 	}
 	/**
+	 * Saves a document to the given URI, forcing a specific extension / format wrapper.
+	 * @throws {Error} If the document cannot be saved.
+	 * @param {string} ext The extension/format of the document (e.g. '.txt').
+	 * @param {string} uri The URI to save the document to.
+	 * @param {any} document The document to save.
+	 * @returns {Promise<boolean>} True if saved successfully, false otherwise.
+	 */
+	async saveDocumentAs(ext, uri, document) {
+		this.console.debug('Saving document as', { uri, ext, document })
+		await this.ensureAccess(uri, 'w')
+		await this._buildPath(uri)
+		const file = await this.resolve(uri)
+		const cleanFile = file.startsWith('/') ? file.slice(1) : file
+		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
+		const res = await this.FS.saveAsync(path, document, ext)
+		if (false !== res) {
+			const stat = await this.statDocument(uri)
+			this.meta.set(uri, stat)
+			this.data.set(uri, false)
+			this.emit('change', { uri, type: 'save', data: document })
+			return true
+		}
+		return false
+	}
+
+	/**
 	 * Saves a document to the given URI.
 	 * @throws {Error} If the document cannot be saved.
 	 * @param {string} uri The URI to save the document to.
@@ -250,8 +276,8 @@ class DBFS extends DB {
 	async ensureAccess(uri, level = 'r') {
 		await super.ensureAccess(uri, level)
 		const path = await this.resolve(uri)
-		if (uri.endsWith('/llm.config.js')) {
-			/** @note load config file from anywhere */
+		if (uri.endsWith('/llm.config.js') || uri !== this.resolveAlias(uri)) {
+			/** @note load config file or explicit aliases from anywhere */
 			return
 		}
 		if (path.startsWith('..')) {
@@ -299,6 +325,45 @@ class DBFS extends DB {
 		)
 		files.sort((a, b) => Number(b.stat.isDirectory) - Number(a.stat.isDirectory))
 		return files
+	}
+
+	/**
+	 * Detects auto-locales based on first level directory names.
+	 * Matches against built-in Intl language list.
+	 * @returns {Promise<{locale: string, title: string, dir: string}[]>}
+	 */
+	async detectLocales() {
+		const entries = await this.listDir('', { depth: 0, skipStat: false })
+		const locales = []
+
+		for (const entry of entries) {
+			if (!entry.stat.isDirectory || entry.name.startsWith('_') || entry.name.startsWith('.')) continue
+			try {
+				const loc = new Intl.Locale(entry.name)
+				const display = new Intl.DisplayNames([entry.name], {
+					type: 'language',
+					fallback: 'none',
+				})
+				// Get language name natively, capitalize first letter
+				const name = display.of(entry.name)
+				if (!name) continue
+				const title = name.charAt(0).toUpperCase() + name.slice(1)
+				/** @ts-ignore — Intl.Locale.textInfo is Stage 3, supported in Node 21+ */
+				const dir = loc.textInfo?.direction === 'rtl' ? 'rtl' : 'ltr'
+				locales.push({
+					locale: entry.name,
+					title,
+					dir,
+				})
+			} catch (err) {
+				// Not a valid BCP 47 locale tag, skip
+			}
+		}
+
+		// Sort alphabetically by locale
+		locales.sort((a, b) => a.locale.localeCompare(b.locale))
+
+		return locales
 	}
 
 	/**

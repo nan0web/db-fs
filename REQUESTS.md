@@ -66,3 +66,79 @@
   - [x] Restore all formats (JSON, CSV, TXT, MD) in `loadAsync`.
   - [x] Fix broken tests in `db-fs` (ReferenceError and serialization issues).
   - [x] Verify `pnpm test:all` pass rate (Core tests pass).
+
+## Request #2026-03-10-01: Aliases (Virtual File Projection)
+
+- **From:** nan0web.app (Documentation Engine)
+- **Priority:** 🟠 High
+- **Status:** ✅ DONE (11.03.2026)
+
+### Problem
+
+`nan0web.app` потребує механізму, де запит до `docs/en/README.md` повертає вміст кореневого `./README.md` без фізичного копіювання. Це зберігає єдине джерело правди та запобігає розмноженню файлів.
+
+### API
+
+```js
+const db = DBFS.from({
+  root: 'docs/',
+  aliases: {
+    'en/README.md': '../../README.md', // відносно root
+    'en/project.md': '../../project.md',
+  },
+})
+
+// Запит до 'en/README.md' прозоро повертає вміст кореневого README.md
+const doc = await db.getDocument('en/README.md')
+```
+
+### Implementation
+
+В `DBFS.js`:
+
+- Наслідується підтримка `resolverAlias(uri)` з `DB.resolve()`.
+- У `DBFS.ensureAccess` додано виключення для `path.startsWith('..')`, якщо запитаний `uri` явно вказано у реєстрі `this.aliases` (`uri !== this.resolveAlias(uri)`). Це дозволяє alias-ам легально виходити за межі "віртуального контейнера" DB.
+
+### Tasks
+
+- [x] Додати поле `aliases` (Map<string, string>) у конструктор `DBFS`. (Наслідується від `DB`)
+- [x] У `loadDocumentAs()` — резолвити URI через aliases перед побудовою шляху. (Безкоштовно через `DB.resolve`)
+- [x] У `statDocument()` — аналогічна перевірка aliases. (Безкоштовно через `DB.resolve`)
+- [x] У `ensureAccess()` — дозволити доступ за межі root для алиасованих шляхів.
+- [x] Тести: `DBFS.aliases.test.js` — мінімум 4 кейси:
+  - Читання через alias повертає коректний вміст
+  - Stat через alias повертає валідний DocumentStat
+  - Fallback на звичайний шлях якщо alias не задано
+
+## Request #2026-03-10-02: Locale Auto-Detection
+
+- **From:** nan0web.app (Documentation Engine)
+- **Priority:** 🟡 Medium
+- **Status:** ✅ DONE (14.03.2026)
+- **Depends on:** Request #2026-03-10-01
+
+### Problem
+
+При ініціалізації з `root: 'docs/'` рушій має автоматично визначити доступні локалі зі структури тек (`docs/en/`, `docs/uk/`), зіставивши їх із вбудованим словником мов (ISO 639-1 / BCP 47).
+
+### API
+
+```js
+const db = DBFS.from({ root: 'docs/' })
+const langs = await db.detectLocales()
+// → [{ locale: 'en', title: 'English', dir: 'ltr' }, { locale: 'uk', title: 'Українська', dir: 'ltr' }]
+```
+
+### Tasks
+
+- [x] Реалізувати `detectLocales()` метод в `DBFS`.
+- [x] Зіставляти імена тек першого рівня з реєстром мов (`data/langs.yaml` — живе у `nan0web.app`).
+- [x] Повертати масив `LocaleEntry[]`.
+- [x] Тести: `DBFS.locales.test.js` — мінімум 3 кейси.
+
+## Request #2026-03-13-01: saveDocumentAs API
+
+- **From:** @nan0web/0hcnai.framework
+- **Priority:** 🟠 High
+- **Goal:** Add `saveDocumentAs(ext, uri, data)` to DBFS to bypass native formatters and save raw data directly.
+- **Status:** ✅ DONE (13.03.2026)

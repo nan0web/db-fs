@@ -3,5 +3,10 @@ chat/
 /.cache/
 /.datasets/
 /.coverage/
+/.vscode/
+/reports/
 node_modules/
 me.md
+
+# Private agent under LICENSE
+.agent/
