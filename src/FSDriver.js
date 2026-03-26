@@ -49,7 +49,8 @@ export default class FSDriver extends DBDriverProtocol {
 					throw new Error(`Unsupported access level: ${level}`)
 			}
 			return true
-		} catch (error) {
+		} catch (/** @type {any} */ error) {
+			if (error.code === 'ENOENT') return true
 			throw new Error(`Access denied to ${absoluteURI} (level: ${level})`)
 		}
 		return false
