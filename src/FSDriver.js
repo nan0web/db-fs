@@ -1,5 +1,5 @@
 // Base protocol import (must be available)
-import { constants } from 'node:fs'
+import { constants, createReadStream } from 'node:fs'
 import { AuthContext, DBDriverProtocol, DocumentStat } from '@nan0web/db'
 import { mkdir, unlink, stat, appendFile, readdir, access } from 'node:fs/promises'
 import { dirname, extname, resolve } from 'node:path'
@@ -70,7 +70,78 @@ export default class FSDriver extends DBDriverProtocol {
 			if (this.driver) {
 				return await this.driver.read(absoluteURI, defaultValue)
 			}
-			return defaultValue
+		}
+	}
+
+	/**
+	 * Creates a read stream for a document.
+	 * @param {string} absoluteURI - File URI
+	 * @returns {Promise<any>}
+	 */
+	async stream(absoluteURI) {
+		const parse = (_stream) => {
+			const ext = extname(absoluteURI)
+			if (ext === '.jsonl') {
+				return (async function* () {
+					let buffer = ''
+					let remainder = ''
+					for await (const chunk of _stream) {
+						remainder += chunk.toString('utf-8')
+						const lines = remainder.split(/\r?\n/)
+						remainder = lines.pop() ?? ''
+						for (const line of lines) {
+							buffer += (buffer ? '\n' : '') + line
+							if (!buffer.trim()) {
+								buffer = ''
+								continue
+							}
+							try {
+								JSON.parse(buffer)
+								yield buffer
+								buffer = ''
+							} catch (e) {
+								// line is part of a multiline string, wait for more
+							}
+						}
+					}
+					if (remainder) {
+						buffer += (buffer ? '\n' : '') + remainder
+					}
+					if (buffer.trim()) {
+						try {
+							JSON.parse(buffer)
+							yield buffer
+						} catch(e) {
+							yield buffer // flush whatever is left
+						}
+					}
+				})()
+			} else if (ext === '.csv' || ext === '.csv0') {
+				return (async function* () {
+					let remainder = ''
+					for await (const chunk of _stream) {
+						remainder += chunk.toString('utf-8')
+						const lines = remainder.split(/\r?\n/)
+						remainder = lines.pop() ?? ''
+						for (const line of lines) {
+							if (line) yield line
+						}
+					}
+					if (remainder) yield remainder
+				})()
+			}
+			return _stream
+		}
+
+		try {
+			await this.access(absoluteURI, 'r')
+			return parse(createReadStream(absoluteURI))
+		} catch (error) {
+			if (this.driver && typeof this.driver.stream === 'function') {
+				const _stream = await this.driver.stream(absoluteURI)
+				if (_stream) return parse(_stream)
+			}
+			throw error
 		}
 	}
 

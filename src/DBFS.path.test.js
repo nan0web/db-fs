@@ -83,9 +83,10 @@ describe('DBFS path tests', () => {
 		assert.strictEqual(abs, expected)
 	})
 
-	it('should return unchanged absolute URI when input is already absolute', () => {
+	it('should resolve virtual absolute URI relative to root', () => {
 		const absAlreadyAbsolute = db.absolute('/already/absolute')
-		assert.strictEqual(absAlreadyAbsolute, '/already/absolute')
+		const expected = pathResolve(db.cwd, db.root, 'already/absolute')
+		assert.strictEqual(absAlreadyAbsolute, expected)
 	})
 
 	it('should compute relative URIs correctly for files in root', () => {

@@ -1,6 +1,7 @@
 export default DBFS;
 declare class DBFS extends DB {
     static FS: typeof FS;
+    static Driver: typeof FSDriver;
     /**
      * Fixes path separators for Windows systems.
      * @param {string} path The path to fix.
@@ -96,6 +97,13 @@ declare class DBFS extends DB {
      */
     writeDocument(uri: string, chunk: string): Promise<boolean>;
     /**
+     * Creates a read stream for a document at the given URI.
+     * @throws {Error} If the document cannot be read.
+     * @param {string} uri The URI to read from.
+     * @returns {Promise<any>} An asynchronous iterator or stream.
+     */
+    stream(uri: string): Promise<any>;
+    /**
      * Deletes a document at the given URI.
      * @throws {Error} If the document cannot be dropped.
      * @param {string} uri The URI(s) of the document(s) to drop.
@@ -141,3 +149,4 @@ import DB from '@nan0web/db';
 import FS from './FSAdapter.js';
 import { DocumentStat } from '@nan0web/db';
 import { DocumentEntry } from '@nan0web/db';
+import FSDriver from './FSDriver.js';

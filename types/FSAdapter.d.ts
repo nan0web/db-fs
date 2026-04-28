@@ -99,11 +99,11 @@ export default class FS {
      * Loads text file, optionally splitting by delimiter.
      * @function
      * @param {string} file - Path to text file.
-     * @param {string} [delimiter="\n"] - Delimiter to split content.
-     * @param {boolean} [softError=false] - Suppress errors.
-     * @returns {string|string[]} File content as string or array.
+     * @param {string | false} [delimiter="\n"] - Delimiter to split content. Pass `false` to return raw string.
+     * @param {boolean} [softError=false] - If true, returns `[]` or `''` on error instead of throwing.
+     * @returns {string | string[]} File content as string or array.
      */
-    static loadTXT(file: string, delimiter?: string, softError?: boolean): string | string[];
+    static loadTXT(file: string, delimiter?: string | false, softError?: boolean): string | string[];
     /**
      * Saves data to file with automatic format handling.
      * @function

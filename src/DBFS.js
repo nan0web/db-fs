@@ -1,8 +1,10 @@
 import DB, { DocumentStat, DocumentEntry } from '@nan0web/db'
 import FS from './FSAdapter.js'
+import FSDriver from './FSDriver.js'
 
 class DBFS extends DB {
 	static FS = FS
+	static Driver = FSDriver
 	/**
 	 * Array of loader functions that attempt to load data from a file path.
 	 * Each loader returns false if it cannot handle the data format.
@@ -46,12 +48,38 @@ class DBFS extends DB {
 	 * @returns {string} Absolute location on the drive.
 	 */
 	location(...args) {
-		let abs = super.absolute(...args)
-		if (abs.startsWith(this.cwd)) {
-			return abs
+		const uri = this.resolveAlias(args[0])
+
+		if (
+			uri?.startsWith('/Users/') ||
+			uri?.startsWith('/home/') ||
+			uri?.startsWith('/tmp/') ||
+			uri?.startsWith('/var/') ||
+			(this.FS.sep === '\\' && uri?.includes(':'))
+		) {
+			return uri
 		}
-		if (abs.startsWith('/')) abs = abs.slice(1)
-		return this.FS.resolve(this.cwd, abs)
+
+		let rel = uri !== args[0] && uri.startsWith('..') ? uri : this.resolveSync(uri, ...args.slice(1))
+
+		const parts = [this.cwd, this.root, rel].map((p, i) => {
+			if (typeof p !== 'string') return p
+			// If it starts with / but is not a real host root, and it is NOT the cwd segment,
+			// make it relative to allow FS.resolve to join it with preceding segments.
+			if (
+				i > 0 &&
+				p.startsWith('/') &&
+				!p.startsWith('/Users/') &&
+				!p.startsWith('/home/') &&
+				!p.startsWith('/tmp/') &&
+				!p.startsWith('/var/')
+			) {
+				return p.slice(1)
+			}
+			return p
+		})
+
+		return this.FS.resolve(...parts)
 	}
 
 	/**
@@ -64,9 +92,7 @@ class DBFS extends DB {
 	 */
 	async statDocument(uri) {
 		this.console.debug('Getting document statistics', { uri })
-		const file = await this.resolve(uri)
-		const cleanFile = file.startsWith('/') ? file.slice(1) : file
-		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
+		const path = this.location(uri)
 		try {
 			if (!(await this.FS.exists(path))) {
 				return new DocumentStat({
@@ -91,9 +117,8 @@ class DBFS extends DB {
 	async loadDocumentAs(ext, uri, defaultValue = undefined) {
 		this.console.debug('Loading document as', { uri, ext, defaultValue })
 		await this.ensureAccess(uri, 'r')
-		const file = await this.resolve(uri)
-		const cleanFile = file.startsWith('/') ? file.slice(1) : file
-		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
+		const file = this.resolveSync(this.resolveAlias(uri))
+		const path = this.location(uri)
 		if (!(await this.FS.exists(path))) {
 			if (!ext) {
 				for (const fallbackExt of this.Directory.DATA_EXTNAMES) {
@@ -111,7 +136,8 @@ class DBFS extends DB {
 
 		// Optimization: Use FS.loadAsync directly if not using custom loaders
 		// But only if we are't explicitly asking for .txt or other raw format
-		if (ext !== '.txt') {
+		const isText = ['.txt', '.md', '.csv'].includes(ext)
+		if (!isText) {
 			const res = await this.FS.loadAsync(path, { format: ext, softError: true })
 			this.console.debug('DBFS.loadDocumentAs FS.loadAsync result:', {
 				uri,
@@ -119,7 +145,7 @@ class DBFS extends DB {
 				res,
 				type: typeof res,
 			})
-			if (res !== false && typeof res !== 'string') return res
+			if (res !== false && res !== undefined) return res
 		}
 
 		for (const loader of this.loaders) {
@@ -133,7 +159,17 @@ class DBFS extends DB {
 				this.console.error(err.stack ?? err.message)
 			}
 		}
-		return false
+		
+		// Final fallback for any unknown extensions - try to load as text if explicitly requested
+		// or if we have no other options and it's not a known binary format
+		if (isText || !ext) {
+			try {
+				const text = this.FS.loadTXT(path, '', true)
+				if (text) return text
+			} catch (e) {}
+		}
+
+		return defaultValue
 	}
 	/**
 	 * Ensures the directory path for a given URI exists, creating it if necessary.
@@ -182,9 +218,8 @@ class DBFS extends DB {
 		this.console.debug('Saving document', { uri, document })
 		await this.ensureAccess(uri, 'w')
 		await this._buildPath(uri)
-		const file = await this.resolve(uri)
-		const cleanFile = file.startsWith('/') ? file.slice(1) : file
-		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
+		const file = this.resolveSync(uri)
+		const path = this.location(uri)
 		const ext = this.extname(uri)
 		const res = await this.FS.saveAsync(path, document, ext)
 		if (false !== res) {
@@ -207,14 +242,29 @@ class DBFS extends DB {
 		this.console.debug('Writing document', { uri, chunk })
 		await this.ensureAccess(uri, 'w')
 		await this._buildPath(uri)
-		const file = await this.resolve(uri)
-		const cleanFile = file.startsWith('/') ? file.slice(1) : file
-		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
+		const file = this.resolveSync(uri)
+		const path = this.location(uri)
 		await this.FS.appendFile(path, chunk, {
 			encoding: /** @type {BufferEncoding} */ (this.encoding),
 		})
 		return true
 	}
+	/**
+	 * Creates a read stream for a document at the given URI.
+	 * @throws {Error} If the document cannot be read.
+	 * @param {string} uri The URI to read from.
+	 * @returns {Promise<any>} An asynchronous iterator or stream.
+	 */
+	async stream(uri) {
+		this.console.debug('Streaming document', { uri })
+		await this.ensureAccess(uri, 'r')
+		const abs = this.location(uri)
+		if (this.driver && typeof this.driver.stream === 'function') {
+			return this.driver.stream(abs)
+		}
+		return super.stream(uri)
+	}
+
 	/**
 	 * Deletes a document at the given URI.
 	 * @throws {Error} If the document cannot be dropped.
@@ -224,11 +274,10 @@ class DBFS extends DB {
 	async dropDocument(uri) {
 		this.console.debug('Deleting document', { uri })
 		await this.ensureAccess(uri, 'd')
-		const file = await this.resolve(uri)
+		const file = this.resolveSync(uri)
 		let stat = await this.statDocument(uri)
 		if (!stat.exists) return false
-		const cleanFile = file.startsWith('/') ? file.slice(1) : file
-		const path = this.FS.resolve(this.cwd, this.root, cleanFile)
+		const path = this.location(uri)
 		if (stat.isDirectory) {
 			const nested = Array.from(this.meta.keys()).filter((u) => u.startsWith(file + '/')).length
 			if (nested > 0) {
@@ -275,12 +324,12 @@ class DBFS extends DB {
 	 */
 	async ensureAccess(uri, level = 'r') {
 		await super.ensureAccess(uri, level)
-		const path = await this.resolve(uri)
+		const file = this.resolveSync(uri)
 		if (uri.endsWith('/llm.config.js') || uri !== this.resolveAlias(uri)) {
 			/** @note load config file or explicit aliases from anywhere */
 			return
 		}
-		if (path.startsWith('..')) {
+		if (file.startsWith('..')) {
 			throw new Error('No access outside of the db container')
 		}
 	}
@@ -293,7 +342,7 @@ class DBFS extends DB {
 	 */
 	async listDir(uri, { depth = 0, skipStat = false } = {}) {
 		this.console.debug('Listing directory', { uri, depth, skipStat })
-		const path = this.FS.resolve(this.cwd, this.root, uri)
+		const path = this.location(uri)
 		const entries = /** @type {import("node:fs").Dirent[]} */ (
 			/** @type {unknown} */ (await this.FS.readdir(path, { withFileTypes: true }))
 		)
@@ -312,7 +361,7 @@ class DBFS extends DB {
 					}
 				}
 				const file = this.FS.relative(
-					this.FS.resolve(this.cwd, this.root),
+					this.location(''),
 					this.FS.resolve(path, entry.name),
 				)
 				return new DocumentEntry({
@@ -372,19 +421,7 @@ class DBFS extends DB {
 	 * @returns {string} Absolute URI
 	 */
 	absolute(...args) {
-		// Check if any argument is already an absolute URI
-		const isAbsoluteURI = args.some((arg) => arg.startsWith('/'))
-
-		if (isAbsoluteURI) {
-			// Find the absolute URI argument and return it unchanged
-			const absoluteArg = args.find((arg) => arg.startsWith('/'))
-			return absoluteArg || '/'
-		}
-
-		// Return absolute filesystem path
-		const resolved = this.resolveSync(...args)
-		const root = this.root.startsWith('/') ? this.root.slice(1) : this.root
-		return this.FS.resolve(this.cwd, root, resolved)
+		return this.location(...args)
 	}
 
 	/**
